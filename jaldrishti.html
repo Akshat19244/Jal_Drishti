@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JalDrishti | ISRO SAC — Water Intelligence Platform</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ─── DESIGN SYSTEM ─── */
+:root {
+  --bg:       #0E0D0C;
+  --bg2:      #151412;
+  --bg3:      #1D1B18;
+  --card:     #1A1916;
+  --card2:    #221F1C;
+  --border:   rgba(245,240,230,0.07);
+  --border2:  rgba(245,240,230,0.12);
+
+  /* Sapphire accent – NOT cyan */
+  --sap:      #2255CC;
+  --sap-l:    #3B6EE8;
+  --sap-dim:  rgba(34,85,204,0.15);
+
+  /* Gold accent for hierarchy */
+  --gold:     #C8960C;
+  --gold-l:   #E8B020;
+  --gold-dim: rgba(200,150,12,0.14);
+
+  /* Status */
+  --ok:       #16A34A;
+  --ok-dim:   rgba(22,163,74,0.14);
+  --warn:     #B45309;
+  --warn-dim: rgba(180,83,9,0.14);
+  --crit:     #B91C1C;
+  --crit-dim: rgba(185,28,28,0.14);
+
+  /* Typography */
+  --t1:       #F5F0E8;
+  --t2:       #B0A898;
+  --t3:       #6B645C;
+
+  --serif:    'Cormorant Garamond', Georgia, serif;
+  --sans:     'Outfit', system-ui, sans-serif;
+  --mono:     'JetBrains Mono', 'Courier New', monospace;
+
+  --r:        6px;
+  --shadow:   0 1px 3px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.3);
+}
+
+/* ─── RESET & BASE ─── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; scroll-padding-top:64px; }
+body {
+  background: var(--bg);
+  color: var(--t1);
+  font-family: var(--sans);
+  font-weight: 400;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Subtle warm grain overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: 256px;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: .5;
+}
+
+/* ─── NAV ─── */
+nav {
+  position: fixed; top: 0; width: 100%; z-index: 999;
+  height: 64px;
+  background: rgba(14,13,12,0.88);
+  backdrop-filter: blur(24px) saturate(1.4);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 3rem;
+}
+.nav-brand { display:flex; align-items:center; gap:14px; }
+.nav-mark {
+  width: 36px; height: 36px;
+  background: var(--sap);
+  border-radius: 8px;
+  display: grid; place-items: center;
+  flex-shrink: 0;
+}
+.nav-mark svg { width:20px; height:20px; }
+.brand-name {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--t1);
+  line-height: 1;
+}
+.brand-sub {
+  font-family: var(--mono);
+  font-size: .52rem;
+  color: var(--t3);
+  letter-spacing: .08em;
+  margin-top: 3px;
+  display: block;
+}
+.nav-links { display:flex; gap:2.2rem; list-style:none; }
+.nav-links a {
+  font-family: var(--sans);
+  font-size: .78rem;
+  font-weight: 500;
+  letter-spacing: .06em;
+  color: var(--t3);
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: color .2s;
+}
+.nav-links a:hover { color: var(--t1); }
+.nav-pill {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--ok-dim);
+  border: 1px solid rgba(22,163,74,.25);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-family: var(--mono);
+  font-size: .6rem;
+  color: #4ADE80;
+  letter-spacing: .06em;
+}
+.live-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #4ADE80;
+  animation: blink 1.8s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ─── HERO ─── */
+#hero {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  padding: 80px 3rem 2rem;
+  gap: 3rem;
+  position: relative;
+  overflow: hidden;
+}
+.hero-radial {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 60% 70% at 65% 50%, rgba(34,85,204,.12) 0%, transparent 65%),
+    radial-gradient(ellipse 35% 35% at 15% 75%, rgba(200,150,12,.07) 0%, transparent 55%);
+  pointer-events: none;
+}
+.hero-left { position: relative; z-index: 1; }
+.h-eyebrow {
+  display: inline-flex; align-items: center; gap: 10px;
+  border: 1px solid var(--border2);
+  background: var(--card);
+  padding: 7px 16px;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: .6rem;
+  letter-spacing: .1em;
+  color: var(--t2);
+  margin-bottom: 2rem;
+  animation: rise .7s ease both;
+}
+.h-dot { width:6px; height:6px; border-radius:50%; background:var(--sap-l); }
+.hero-title {
+  font-family: var(--serif);
+  font-size: clamp(2.8rem,5vw,4.4rem);
+  font-weight: 600;
+  line-height: 1.06;
+  letter-spacing: -.01em;
+  margin-bottom: 1.5rem;
+  animation: rise .7s ease .1s both;
+}
+.hero-title em { font-style: italic; color: var(--gold-l); }
+.hero-body {
+  font-size: .95rem;
+  color: var(--t2);
+  line-height: 1.8;
+  max-width: 480px;
+  margin-bottom: 2.5rem;
+  animation: rise .7s ease .2s both;
+}
+.hero-actions { display:flex; gap:1rem; animation: rise .7s ease .3s both; }
+.btn-solid {
+  background: var(--sap);
+  color: #fff;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: .82rem;
+  letter-spacing: .06em;
+  padding: 13px 28px;
+  border: none;
+  border-radius: var(--r);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: background .2s, transform .2s, box-shadow .2s;
+  box-shadow: 0 0 0 0 rgba(34,85,204,.4);
+}
+.btn-solid:hover { background: var(--sap-l); transform:translateY(-2px); box-shadow:0 6px 20px rgba(34,85,204,.35); }
+.btn-ghost {
+  background: transparent;
+  color: var(--t1);
+  font-family: var(--sans);
+  font-weight: 500;
+  font-size: .82rem;
+  letter-spacing: .06em;
+  padding: 12px 28px;
+  border: 1px solid var(--border2);
+  border-radius: var(--r);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: border-color .2s, background .2s, transform .2s;
+}
+.btn-ghost:hover { border-color: var(--t2); background: var(--card); transform:translateY(-2px); }
+@keyframes rise { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+
+/* Hero visual */
+.hero-right {
+  position: relative; z-index: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  animation: rise .8s ease .4s both;
+}
+.stat-tile {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.4rem;
+  position: relative;
+  overflow: hidden;
+}
+.stat-tile::before {
+  content:'';
+  position:absolute; top:0; left:0; right:0; height:2px;
+  background: var(--sap);
+  opacity:.6;
+}
+.stat-tile.gold::before { background:var(--gold); }
+.stat-tile.ok::before { background:var(--ok); }
+.stat-tile.crit::before { background:var(--crit); }
+.tile-num {
+  font-family: var(--mono);
+  font-size: 2.2rem;
+  font-weight: 500;
+  display: block;
+  line-height: 1;
+  margin-bottom: .5rem;
+}
+.tile-label { font-size: .75rem; color: var(--t2); font-weight: 500; }
+.tile-sub { font-family: var(--mono); font-size: .6rem; color: var(--t3); margin-top:.3rem; display:block; }
+.tile-wide {
+  grid-column: 1 / -1;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.2rem 1.4rem;
+}
+.tile-wide .tile-num { font-size:1.5rem; margin-bottom:0; }
+
+/* ─── DIVIDER ─── */
+.divider {
+  height: 1px; background: var(--border);
+  margin: 0 3rem;
+}
+
+/* ─── KPIS STRIP ─── */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(5,1fr);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+}
+.kpi {
+  padding: 1.4rem 2rem;
+  border-right: 1px solid var(--border);
+  text-align: center;
+}
+.kpi:last-child { border-right: none; }
+.kv {
+  font-family: var(--mono);
+  font-size: 1.6rem;
+  display: block;
+  line-height: 1;
+  margin-bottom: .4rem;
+}
+.kl {
+  font-size: .68rem;
+  color: var(--t3);
+  font-weight: 500;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+/* ─── SECTIONS ─── */
+section { padding: 5rem 3rem; position:relative; z-index:1; }
+.section-eyebrow {
+  font-family: var(--mono);
+  font-size: .62rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--sap-l);
+  margin-bottom: .75rem;
+  display: block;
+}
+.section-title {
+  font-family: var(--serif);
+  font-size: 2.4rem;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  margin-bottom: 2.5rem;
+  line-height: 1.15;
+}
+
+/* ─── MAP ─── */
+#map-sec { padding: 4rem 0; background: var(--bg2); }
+.map-inner { padding: 0 3rem; }
+.map-wrap {
+  display: grid;
+  grid-template-columns: 260px 1fr 280px;
+  gap: 1rem;
+  height: 680px;
+  margin-top: 2rem;
+}
+.msb { display:flex; flex-direction:column; gap:.9rem; overflow-y:auto; }
+
+/* Panel */
+.panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.1rem;
+}
+.panel-title {
+  font-family: var(--sans);
+  font-size: .68rem;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--t3);
+  margin-bottom: .9rem;
+}
+
+/* Layer toggles */
+.layer-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.layer-row:last-child { border-bottom: none; }
+.layer-info { display:flex; align-items:center; gap:9px; }
+.layer-pip { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.layer-name { font-size: .82rem; font-weight:500; }
+.layer-ct { font-family:var(--mono); font-size:.6rem; color:var(--t3); }
+.tog {
+  width:32px; height:18px;
+  border-radius:9px;
+  background:var(--bg3);
+  position:relative;
+  transition:background .2s;
+  flex-shrink:0;
+}
+.tog.on { background:var(--sap); }
+.tok { width:12px; height:12px; background:#fff; border-radius:50%; position:absolute; top:3px; left:3px; transition:transform .2s; }
+.tog.on .tok { transform:translateX(14px); }
+
+/* Legend items */
+.leg { display:flex; align-items:center; gap:9px; font-size:.75rem; color:var(--t2); margin-bottom:6px; }
+.ld { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+
+/* Year buttons */
+.ybs { display:flex; gap:5px; flex-wrap:wrap; }
+.yb {
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--t3); font-family: var(--mono); font-size: .62rem;
+  padding: 3px 9px; cursor: pointer; border-radius: 4px;
+  transition: all .18s;
+}
+.yb.on, .yb:hover { background:var(--sap-dim); border-color:rgba(34,85,204,.35); color:#93B4FF; }
+
+/* District select */
+.dsel {
+  width:100%; background:var(--bg3); border:1px solid var(--border);
+  color:var(--t1); font-family:var(--mono); font-size:.72rem;
+  padding:7px 10px; border-radius:6px; cursor:pointer;
+  outline:none; margin-bottom:.8rem; appearance:none;
+}
+
+/* Station detail */
+.wqi-ring {
+  text-align:center; padding:1.1rem 0 .8rem;
+  border-bottom:1px solid var(--border); margin-bottom:.9rem;
+}
+.wqi-big { font-family:var(--mono); font-size:2.8rem; font-weight:500; display:block; line-height:1; }
+.wqi-status { font-size:.62rem; letter-spacing:.14em; text-transform:uppercase; color:var(--t3); margin-top:5px; display:block; }
+.wqi-loc { font-family:var(--mono); font-size:.55rem; color:var(--t3); margin-top:4px; display:block; }
+
+.pgrid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.pc {
+  background:var(--bg3); border:1px solid var(--border);
+  border-radius:6px; padding:8px 10px;
+}
+.plbl { font-family:var(--mono); font-size:.55rem; color:var(--t3); display:block; margin-bottom:3px; letter-spacing:.06em; }
+.pval { font-family:var(--mono); font-size:.92rem; font-weight:500; }
+.punit { font-size:.55rem; color:var(--t3); }
+.pbar { height:2px; background:rgba(245,240,230,.08); border-radius:1px; margin-top:5px; overflow:hidden; }
+.pbf { height:100%; border-radius:1px; transition:width .5s ease; }
+
+.pmeta {
+  margin-top:.8rem; font-family:var(--mono); font-size:.6rem;
+  color:var(--t3); line-height:2;
+  border-top:1px solid var(--border); padding-top:.7rem;
+}
+.pmeta b { color:var(--t2); font-weight:400; }
+
+/* Map itself */
+#map { border-radius:10px; border:1px solid var(--border); }
+
+/* ─── DASHBOARD ─── */
+#dash { background:var(--bg); }
+.dgrid { display:grid; grid-template-columns:1fr 1fr; gap:1.2rem; }
+.cp {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:10px; padding:1.4rem;
+}
+.cp h3 {
+  font-family:var(--sans); font-size:.68rem; font-weight:600;
+  letter-spacing:.1em; text-transform:uppercase; color:var(--t3);
+  margin-bottom:1.2rem;
+}
+.cp canvas { max-height:250px; }
+
+/* ─── ALERTS ─── */
+#alerts { background:var(--bg2); }
+.agrid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; }
+.ac {
+  background:var(--card); border:1px solid var(--border);
+  border-radius:10px; padding:1.3rem;
+  border-top:2px solid transparent;
+}
+.ac.cr { border-top-color:var(--crit); background:rgba(185,28,28,.04); }
+.ac.wn { border-top-color:var(--warn); background:rgba(180,83,9,.04); }
+.ac.in { border-top-color:var(--sap); background:var(--sap-dim); }
+.asev { font-family:var(--mono); font-size:.6rem; letter-spacing:.1em; text-transform:uppercase; margin-bottom:.5rem; }
+.ac.cr .asev { color:#FCA5A5; } .ac.wn .asev { color:#FCD34D; } .ac.in .asev { color:#93B4FF; }
+.atitle { font-family:var(--sans); font-size:.9rem; font-weight:600; margin-bottom:.4rem; line-height:1.35; }
+.adesc { font-size:.77rem; color:var(--t2); line-height:1.6; }
+.ameta {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-top:1rem; font-family:var(--mono); font-size:.6rem; color:var(--t3);
+}
+.atag {
+  padding:2px 9px; border-radius:3px;
+  font-family:var(--mono); font-size:.58rem;
+}
+.ac.cr .atag { background:rgba(185,28,28,.2); color:#FCA5A5; }
+.ac.wn .atag { background:rgba(180,83,9,.2); color:#FCD34D; }
+.ac.in .atag { background:var(--sap-dim); color:#93B4FF; }
+
+/* ─── SATELLITE ─── */
+#sat { background:var(--bg); }
+.sgrid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.2rem; }
+.sp { background:var(--card); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+.simg { width:100%; height:170px; }
+.sinfo { padding:1rem; }
+.stit { font-family:var(--sans); font-size:.85rem; font-weight:600; margin-bottom:.2rem; }
+.smeta { font-family:var(--mono); font-size:.6rem; color:var(--t3); }
+.sval { margin-top:.4rem; font-family:var(--mono); font-size:.62rem; color:var(--t2); }
+
+.stbl-wrap { margin-top:2rem; background:var(--card); border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+.stbl-head { padding:.9rem 1.4rem; border-bottom:1px solid var(--border); font-family:var(--sans); font-size:.68rem; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--t3); }
+table { width:100%; border-collapse:collapse; font-family:var(--mono); font-size:.72rem; }
+th { padding:8px 16px; text-align:left; color:var(--t3); font-weight:400; letter-spacing:.08em; background:var(--bg3); font-size:.65rem; }
+td { padding:9px 16px; color:var(--t2); }
+tr:not(:last-child) td { border-bottom:1px solid var(--border); }
+
+/* ─── FOOTER ─── */
+footer {
+  background:var(--bg2); border-top:1px solid var(--border);
+  padding:3rem 3rem 2rem;
+  display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:3rem;
+}
+.fb h3 { font-family:var(--serif); font-size:1.4rem; font-weight:600; margin-bottom:.6rem; }
+.fb p { font-size:.8rem; color:var(--t2); line-height:1.7; }
+.fb-meta { margin-top:.9rem; font-family:var(--mono); font-size:.6rem; color:var(--t3); line-height:2; }
+.fsec h4 { font-family:var(--sans); font-size:.68rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--t3); margin-bottom:.9rem; }
+.fsec ul { list-style:none; }
+.fsec li { font-size:.78rem; color:var(--t2); margin-bottom:.45rem; font-family:var(--mono); }
+.fbot {
+  grid-column:1/-1; border-top:1px solid var(--border); padding-top:1.4rem;
+  display:flex; justify-content:space-between;
+  font-family:var(--mono); font-size:.6rem; color:var(--t3);
+}
+
+/* ─── LEAFLET POPUP ─── */
+.leaflet-popup-content-wrapper {
+  background:#1A1916 !important;
+  border:1px solid rgba(245,240,230,.12) !important;
+  border-radius:10px !important;
+  color:#F5F0E8 !important;
+  box-shadow:0 8px 40px rgba(0,0,0,.6) !important;
+}
+.leaflet-popup-tip { background:#1A1916 !important; }
+.leaflet-popup-content { margin:13px 15px !important; }
+.pop-title { font-family:'Outfit',sans-serif; font-weight:600; font-size:.84rem; margin-bottom:3px; }
+.pop-sub { font-family:'JetBrains Mono',monospace; font-size:.56rem; color:rgba(245,240,230,.4); margin-bottom:10px; }
+.pop-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
+.pp { background:rgba(245,240,230,.04); border:1px solid rgba(245,240,230,.08); border-radius:5px; padding:6px 8px; }
+.ppl { font-size:.55rem; color:rgba(245,240,230,.38); font-family:'JetBrains Mono',monospace; display:block; }
+.ppv { font-family:'JetBrains Mono',monospace; font-size:.8rem; font-weight:500; }
+.pop-wqi { text-align:center; margin-top:9px; padding:7px; background:rgba(245,240,230,.04); border-radius:5px; }
+.pop-wn { font-family:'JetBrains Mono',monospace; font-size:1.4rem; font-weight:500; display:block; line-height:1; }
+.pop-wl { font-size:.56rem; color:rgba(245,240,230,.38); letter-spacing:.1em; }
+
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--bg3); border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:var(--sap); }
+</style>
+</head>
+<body>
+
+<!-- ─── NAV ─── -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-mark">
+      <svg viewBox="0 0 20 24" fill="none"><path d="M10 2C10 2 4 10 4 15C4 18.314 6.686 21 10 21C13.314 21 16 18.314 16 15C16 10 10 2 10 2Z" fill="white" opacity=".9"/><circle cx="10" cy="15" r="2.5" fill="rgba(255,255,255,.5)"/></svg>
+    </div>
+    <div>
+      <div class="brand-name">Jal Drishti</div>
+      <span class="brand-sub">ISRO SAC · SRTD/RTMG/MISA · WATER INTELLIGENCE PLATFORM</span>
+    </div>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#hero">Overview</a></li>
+    <li><a href="#map-sec">Map</a></li>
+    <li><a href="#dash">Dashboard</a></li>
+    <li><a href="#alerts">Alerts</a></li>
+    <li><a href="#sat">Satellite</a></li>
+  </ul>
+  <div class="nav-pill">
+    <div class="live-dot"></div>
+    CPCB · CWC LIVE FEED
+  </div>
+</nav>
+
+<!-- ─── HERO ─── -->
+<section id="hero">
+  <div class="hero-radial"></div>
+  <div class="hero-left">
+    <div class="h-eyebrow">
+      <div class="h-dot"></div>
+      GUJARAT PHASE · SENTINEL-2A/2B · CPCB + CWC INTEGRATED
+    </div>
+    <h1 class="hero-title">
+      Water Quality<br>
+      <em>Intelligence</em><br>
+      Platform
+    </h1>
+    <p class="hero-body">
+      Satellite-powered real-time surveillance of Gujarat's rivers, lakes, canals, and coastal water bodies. Fusing Sentinel-2 multispectral imagery with CPCB/CWC ground-truth data for precision contamination detection and authority-level alerting.
+    </p>
+    <div class="hero-actions">
+      <a href="#map-sec" class="btn-solid">Explore Live Map</a>
+      <a href="#dash" class="btn-ghost">View Dashboard</a>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="stat-tile">
+      <span class="tile-num" style="color:var(--sap-l)">23</span>
+      <div class="tile-label">Monitoring Stations</div>
+      <span class="tile-sub">Across Gujarat · CPCB + CWC</span>
+    </div>
+    <div class="stat-tile gold">
+      <span class="tile-num" style="color:var(--gold-l)">9</span>
+      <div class="tile-label">Parameters Tracked</div>
+      <span class="tile-sub">DO · BOD · pH · Turbidity · FColi…</span>
+    </div>
+    <div class="stat-tile crit">
+      <span class="tile-num" style="color:#FCA5A5">3</span>
+      <div class="tile-label">Critical Alerts Active</div>
+      <span class="tile-sub">FColi · Turbidity · BOD breach</span>
+    </div>
+    <div class="stat-tile ok">
+      <span class="tile-num" style="color:#86EFAC">2018</span>
+      <div class="tile-label">Historical Coverage</div>
+      <span class="tile-sub">Through 2025 · 7-year dataset</span>
+    </div>
+    <div class="stat-tile tile-wide">
+      <div>
+        <div class="tile-label">Satellite Data Source</div>
+        <span class="tile-sub">Sentinel-2A/2B · ESA Copernicus · ISRO Bhuvan Water Portal</span>
+      </div>
+      <span class="tile-num" style="color:var(--t2);font-size:1.2rem">2 Agencies</span>
+    </div>
+  </div>
+</section>
+
+<!-- KPI Strip -->
+<div class="kpi-strip">
+  <div class="kpi"><span class="kv" style="color:var(--sap-l)">9</span><span class="kl">Districts Covered</span></div>
+  <div class="kpi"><span class="kv" style="color:#FCA5A5">790K</span><span class="kl">Max FColi (MPN/100mL)</span></div>
+  <div class="kpi"><span class="kv" style="color:#FCD34D">1,600</span><span class="kl">Max Turbidity (NTU)</span></div>
+  <div class="kpi"><span class="kv" style="color:#86EFAC">8.5</span><span class="kl">Best DO Reading (mg/L)</span></div>
+  <div class="kpi"><span class="kv" style="color:var(--t2)">6</span><span class="kl">Sentinel-2 Passes / Month</span></div>
+</div>
+
+<!-- ─── MAP ─── -->
+<section id="map-sec">
+  <div class="map-inner">
+    <span class="section-eyebrow">Real-Time Geospatial Intelligence</span>
+    <h2 class="section-title" style="margin-bottom:0">Gujarat Water Body Network</h2>
+    <div class="map-wrap">
+
+      <!-- Left sidebar -->
+      <div class="msb">
+        <div class="panel">
+          <div class="panel-title">Layer Controls</div>
+          <div class="layer-row" onclick="toggleL('rivers')">
+            <div class="layer-info"><div class="layer-pip" style="background:#3B8BFF"></div><span class="layer-name">Rivers & Banks</span></div>
+            <div style="display:flex;align-items:center;gap:8px"><span class="layer-ct">9</span><div class="tog on" id="ts-rivers"><div class="tok"></div></div></div>
+          </div>
+          <div class="layer-row" onclick="toggleL('lakes')">
+            <div class="layer-info"><div class="layer-pip" style="background:#2A9D8F"></div><span class="layer-name">Lakes & Ponds</span></div>
+            <div style="display:flex;align-items:center;gap:8px"><span class="layer-ct">7</span><div class="tog on" id="ts-lakes"><div class="tok"></div></div></div>
+          </div>
+          <div class="layer-row" onclick="toggleL('canals')">
+            <div class="layer-info"><div class="layer-pip" style="background:#E9C46A"></div><span class="layer-name">Canals & Dams</span></div>
+            <div style="display:flex;align-items:center;gap:8px"><span class="layer-ct">4</span><div class="tog on" id="ts-canals"><div class="tok"></div></div></div>
+          </div>
+          <div class="layer-row" onclick="toggleL('beaches')">
+            <div class="layer-info"><div class="layer-pip" style="background:#A8DADC"></div><span class="layer-name">Coastal & Beaches</span></div>
+            <div style="display:flex;align-items:center;gap:8px"><span class="layer-ct">3</span><div class="tog on" id="ts-beaches"><div class="tok"></div></div></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">WQI Legend</div>
+          <div class="leg"><div class="ld" style="background:#16A34A"></div>Excellent (0–25)</div>
+          <div class="leg"><div class="ld" style="background:#65A30D"></div>Good (26–50)</div>
+          <div class="leg"><div class="ld" style="background:#D97706"></div>Moderate (51–75)</div>
+          <div class="leg"><div class="ld" style="background:#EA580C"></div>Poor (76–90)</div>
+          <div class="leg"><div class="ld" style="background:#DC2626"></div>Critical (91+)</div>
+        </div>
+
+        <div class="panel" style="flex:1">
+          <div class="panel-title">Year Filter</div>
+          <div class="ybs">
+            <button class="yb on">All</button>
+            <button class="yb">2018</button><button class="yb">2019</button>
+            <button class="yb">2020</button><button class="yb">2022</button>
+            <button class="yb">2023</button><button class="yb">2024</button>
+            <button class="yb">2025</button>
+          </div>
+          <div style="margin-top:1rem;font-family:var(--mono);font-size:.6rem;color:var(--t3);line-height:2">
+            ▪ CPCB Ground Stations<br>▪ CWC Hydrological Data<br>▪ Sentinel-2A/2B Imagery<br>▪ ISRO Bhuvan Water Portal
+          </div>
+        </div>
+      </div>
+
+      <!-- Map -->
+      <div id="map"></div>
+
+      <!-- Right sidebar -->
+      <div class="msb">
+        <div class="panel" style="flex:1;overflow-y:auto">
+          <div class="panel-title">Station Details</div>
+          <div id="s-ph" style="color:var(--t3);font-size:.8rem;line-height:1.7">
+            <span style="font-family:var(--mono);font-size:.6rem;color:var(--sap-l)">▸ SELECT A STATION ON MAP</span><br><br>
+            Click any marker to view real-time water quality parameters, WQI score, and latest readings.
+          </div>
+          <div id="s-det" style="display:none">
+            <div class="wqi-ring">
+              <span class="wqi-big" id="d-wqi">--</span>
+              <span class="wqi-status" id="d-st">WATER QUALITY INDEX</span>
+              <span class="wqi-loc" id="d-nm">--</span>
+            </div>
+            <div class="pgrid">
+              <div class="pc"><span class="plbl">DISSOLVED O₂</span><span class="pval" id="d-do">--</span><span class="punit"> mg/L</span><div class="pbar"><div class="pbf" id="b-do" style="width:0%;background:#16A34A"></div></div></div>
+              <div class="pc"><span class="plbl">BOD</span><span class="pval" id="d-bod">--</span><span class="punit"> mg/L</span><div class="pbar"><div class="pbf" id="b-bod" style="width:0%;background:#D97706"></div></div></div>
+              <div class="pc"><span class="plbl">pH</span><span class="pval" id="d-ph">--</span><div class="pbar"><div class="pbf" id="b-ph" style="width:0%;background:#3B8BFF"></div></div></div>
+              <div class="pc"><span class="plbl">TURBIDITY</span><span class="pval" id="d-tu">--</span><span class="punit"> NTU</span><div class="pbar"><div class="pbf" id="b-tu" style="width:0%;background:#EA580C"></div></div></div>
+              <div class="pc"><span class="plbl">FECAL COLI.</span><span class="pval" id="d-fc">--</span><span class="punit"> MPN</span><div class="pbar"><div class="pbf" id="b-fc" style="width:0%;background:#DC2626"></div></div></div>
+              <div class="pc"><span class="plbl">CONDUCTIVITY</span><span class="pval" id="d-ec">--</span><span class="punit"> µS/cm</span><div class="pbar"><div class="pbf" id="b-ec" style="width:0%;background:#2A9D8F"></div></div></div>
+            </div>
+            <div class="pmeta">
+              Agency: <b id="d-ag">--</b><br>
+              Reading: <b id="d-dt">--</b><br>
+              Type: <b id="d-ty">--</b>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">District Average</div>
+          <select class="dsel" id="distSel" onchange="updateDist()">
+            <option>Ahmedabad</option><option>Kheda</option>
+            <option>Vadodara</option><option>Surat</option><option>Bharuch</option>
+          </select>
+          <canvas id="distC" height="100"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── DASHBOARD ─── -->
+<section id="dash">
+  <span class="section-eyebrow">Multi-Parameter Analytics</span>
+  <h2 class="section-title">Water Quality Dashboard — Gujarat 2018–2025</h2>
+  <div class="dgrid">
+    <div class="cp"><h3>BOD Trend · Sabarmati River Stations</h3><canvas id="bodC"></canvas></div>
+    <div class="cp"><h3>Dissolved Oxygen · All Stations vs CPCB Standard</h3><canvas id="doC"></canvas></div>
+    <div class="cp"><h3>Fecal Coliform · Contamination Levels (log scale)</h3><canvas id="fcC"></canvas></div>
+    <div class="cp"><h3>WQI District Ranking · Lower = Better Water Quality</h3><canvas id="wqiC"></canvas></div>
+  </div>
+</section>
+
+<!-- ─── ALERTS ─── -->
+<section id="alerts">
+  <span class="section-eyebrow">Threshold Breach Monitoring</span>
+  <h2 class="section-title">Active Alerts & Authority Notifications</h2>
+  <div class="agrid">
+    <div class="ac cr">
+      <div class="asev">● Critical Alert</div>
+      <div class="atitle">Extreme Fecal Coliform — Vautha, Kheda</div>
+      <div class="adesc">790,000 MPN/100mL detected — 1,580× the CPCB limit of 500 MPN/100mL. Upstream sewage discharge and agricultural runoff confirmed as sources via spectral analysis. Kheda GPCB notified.</div>
+      <div class="ameta"><span>22.650°N · 72.535°E</span><span class="atag">FColi: 790K MPN</span></div>
+    </div>
+    <div class="ac cr">
+      <div class="asev">● Critical Alert</div>
+      <div class="atitle">Extreme Turbidity — Sabarmati D/S Ahmedabad</div>
+      <div class="adesc">Turbidity at 1,600 NTU — 16× the threshold. Sentinel-2 NDTI index confirms high suspended sediment with industrial effluent signatures in the downstream urban reach of Sabarmati.</div>
+      <div class="ameta"><span>22.915°N · 72.516°E</span><span class="atag">Turbidity: 1,600 NTU</span></div>
+    </div>
+    <div class="ac wn">
+      <div class="asev">◆ Warning</div>
+      <div class="atitle">Elevated BOD — Sabarmati V.N. Bridge</div>
+      <div class="adesc">BOD of 125 mg/L measured — CPCB Class B standard is 3 mg/L. High organic load points to untreated domestic sewage and industrial effluents entering near Ahmedabad's urban stretch.</div>
+      <div class="ameta"><span>22.983°N · 72.543°E</span><span class="atag">BOD: 125 mg/L</span></div>
+    </div>
+    <div class="ac wn">
+      <div class="asev">◆ Warning</div>
+      <div class="atitle">High pH + EC — Malav Talav, Dholka</div>
+      <div class="adesc">pH 9.37 and EC 4,213 µS/cm both exceed safe thresholds. Indicates saline intrusion and algal bloom risk. Sentinel-2B NDCI confirms elevated chlorophyll-a. Gujarat PCB advisory issued.</div>
+      <div class="ameta"><span>22.727°N · 72.435°E</span><span class="atag">pH: 9.37 | EC: 4,213</span></div>
+    </div>
+    <div class="ac in">
+      <div class="asev">◉ Advisory</div>
+      <div class="atitle">Low Dissolved Oxygen — Sabarmati Downstream</div>
+      <div class="adesc">DO dropping to 2.1 mg/L at Sabarmati D/S — CPCB minimum is 4 mg/L. Sustained hypoxia threatens aquatic biodiversity and fisheries. Monitoring frequency increased to bi-weekly.</div>
+      <div class="ameta"><span>22.915°N · 72.516°E</span><span class="atag">DO: 2.1 mg/L</span></div>
+    </div>
+    <div class="ac in">
+      <div class="asev">◉ Advisory</div>
+      <div class="atitle">Sentinel-2 Chlorophyll Anomaly — Chandola Lake</div>
+      <div class="adesc">NDCI from Sentinel-2B (Band 5/Band 4) shows chlorophyll-a at ~18 µg/L at Chandola Lake — early-stage algal bloom. Ahmedabad Municipal Corporation and GPCB notified for ground verification.</div>
+      <div class="ameta"><span>22.988°N · 72.589°E</span><span class="atag">Satellite · NDCI</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── SATELLITE ─── -->
+<section id="sat">
+  <span class="section-eyebrow">Sentinel-2A/2B Multispectral Analysis</span>
+  <h2 class="section-title">Satellite Water Quality Indices</h2>
+  <div class="sgrid">
+    <div class="sp">
+      <div class="simg"><canvas id="sc1" style="width:100%;height:100%"></canvas></div>
+      <div class="sinfo">
+        <div class="stit">NDWI · Normalized Difference Water Index</div>
+        <div class="smeta">Sentinel-2B · Band 3 / Band 8 · Sabarmati Basin</div>
+        <div class="sval">Mean NDWI: <span style="color:#86EFAC">0.42</span> · Mapped Area: <span style="color:#93B4FF">~342 km²</span></div>
+      </div>
+    </div>
+    <div class="sp">
+      <div class="simg"><canvas id="sc2" style="width:100%;height:100%"></canvas></div>
+      <div class="sinfo">
+        <div class="stit">NDCI · Chlorophyll-a Concentration Index</div>
+        <div class="smeta">Sentinel-2A · Band 5 / Band 4 · Ahmedabad Lakes</div>
+        <div class="sval">Bloom Risk: <span style="color:#FCD34D">Moderate</span> · Chl-a est: <span style="color:#FCD34D">~18 µg/L</span></div>
+      </div>
+    </div>
+    <div class="sp">
+      <div class="simg"><canvas id="sc3" style="width:100%;height:100%"></canvas></div>
+      <div class="sinfo">
+        <div class="stit">NDTI · Turbidity & Sediment Load Index</div>
+        <div class="smeta">Sentinel-2B · Band 4 / Band 3 · River Corridors</div>
+        <div class="sval">High Zones Detected: <span style="color:#FCA5A5">3</span> · Peak Est: <span style="color:#FCA5A5">1,600 NTU equiv.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stbl-wrap">
+    <div class="stbl-head">Sentinel-2 Acquisition Log — Gujarat Region</div>
+    <table>
+      <thead><tr><th>Pass Date</th><th>Satellite</th><th>Cloud Cover</th><th>NDWI</th><th>NDCI</th><th>Status</th></tr></thead>
+      <tbody id="stbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <div class="fb">
+    <h3>Jal Drishti</h3>
+    <p>Water Quality Intelligence Platform for Gujarat's rivers, lakes, canals, and coastal water bodies. Developed under ISRO Space Applications Centre, SRTD/RTMG/MISA Division, Ahmedabad.</p>
+    <div class="fb-meta">
+      Ground Data: CPCB · Central Water Commission<br>
+      Satellite: Sentinel-2A/2B (ESA Copernicus)<br>
+      Portal: ISRO Bhuvan Water Quality Layer<br>
+      Active Stations: 23 across Gujarat
+    </div>
+  </div>
+  <div class="fsec">
+    <h4>Parameters Monitored</h4>
+    <ul>
+      <li>Dissolved Oxygen (DO)</li><li>BOD (Biochemical O₂ Demand)</li>
+      <li>pH Level</li><li>Turbidity (NTU)</li>
+      <li>Fecal / Total Coliform</li><li>Electrical Conductivity</li>
+      <li>Temperature (°C)</li><li>Total Dissolved Solids</li>
+      <li>Chlorophyll-a (via Sentinel-2)</li>
+    </ul>
+  </div>
+  <div class="fsec">
+    <h4>Data Sources</h4>
+    <ul>
+      <li>CPCB Water Quality Network</li><li>CWC Hydrological Data</li>
+      <li>Sentinel-2A/2B (ESA/Copernicus)</li><li>ISRO Bhuvan Water Portal</li>
+      <li>Gujarat PCB Field Reports</li>
+    </ul>
+  </div>
+  <div class="fbot">
+    <span>© 2025 Jal Drishti · ISRO Space Applications Centre · SRTD/RTMG/MISA · Ahmedabad, Gujarat</span>
+    <span>Dr. Surisetty V V Arun Kumar · Demo v2.0</span>
+  </div>
+</footer>
+
+<script>
+// ─── STATION DATA (Real CPCB/CWC CSV) ───
+const ST=[
+  {id:1,name:"Sabarmati — Railway Bridge, Ahmedabad",sh:"Sabarmati RB",lat:23.06353,lng:72.589064,layer:"rivers",type:"River",dist:"Ahmedabad",ag:"CPCB",do:5.4,bod:20.7,ph:8.09,turb:35,fcol:230,ec:520,date:"Jun 2020"},
+  {id:2,name:"Sabarmati — V.N. Bridge, Ahmedabad",sh:"Sabarmati VN",lat:22.982611,lng:72.543139,layer:"rivers",type:"River",dist:"Ahmedabad",ag:"CPCB",do:3.8,bod:102,ph:7.79,turb:170,fcol:1200,ec:890,date:"Feb 2019"},
+  {id:3,name:"Sabarmati — Vautha / Dhokla",sh:"Sabarmati Vautha",lat:22.721547,lng:72.530103,layer:"rivers",type:"River",dist:"Ahmedabad",ag:"CPCB",do:4.2,bod:39,ph:7.92,turb:230,fcol:680,ec:760,date:"Apr 2019"},
+  {id:4,name:"Sabarmati — Miroli, Dascroi",sh:"Sabarmati Miroli",lat:23.031314,lng:72.575114,layer:"rivers",type:"River",dist:"Ahmedabad",ag:"CPCB",do:4.8,bod:60,ph:7.45,turb:390,fcol:890,ec:640,date:"May 2019"},
+  {id:5,name:"Sabarmati — Downstream Ahmedabad",sh:"Sabarmati D/S",lat:22.915326,lng:72.515828,layer:"rivers",type:"River",dist:"Ahmedabad",ag:"CPCB",do:2.1,bod:42,ph:7.40,turb:1600,fcol:920,ec:2010,date:"Jul 2020"},
+  {id:6,name:"Vautha — Sabarmati, Kheda (CWC)",sh:"Vautha, Kheda",lat:22.6502,lng:72.535,layer:"rivers",type:"River",dist:"Kheda",ag:"CWC",do:0.6,bod:43.3,ph:8.09,turb:91.2,fcol:790000,ec:1630,date:"Feb 2023"},
+  {id:7,name:"Narmada — Bharuch Reach",sh:"Narmada, Bharuch",lat:21.72,lng:72.98,layer:"rivers",type:"River",dist:"Bharuch",ag:"CPCB",do:7.8,bod:3.2,ph:7.9,turb:12,fcol:45,ec:380,date:"Mar 2024"},
+  {id:8,name:"Tapi — Surat Urban Stretch",sh:"Tapi, Surat",lat:21.175,lng:72.831,layer:"rivers",type:"River",dist:"Surat",ag:"CPCB",do:5.1,bod:28,ph:7.6,turb:68,fcol:2400,ec:720,date:"Jan 2024"},
+  {id:9,name:"Mahi — Vadodara Reach",sh:"Mahi, Vadodara",lat:22.30,lng:73.18,layer:"rivers",type:"River",dist:"Vadodara",ag:"CPCB",do:6.4,bod:8.5,ph:7.7,turb:34,fcol:380,ec:490,date:"Dec 2023"},
+  {id:10,name:"Malav Talav — Dholka",sh:"Malav Talav",lat:22.726822,lng:72.435239,layer:"lakes",type:"Lake",dist:"Ahmedabad",ag:"CPCB",do:7.5,bod:17,ph:9.30,turb:160,fcol:null,ec:3935,date:"Jul 2020"},
+  {id:11,name:"Moonsar Lake — Viramgam",sh:"Moonsar Lake",lat:23.121408,lng:72.041022,layer:"lakes",type:"Lake",dist:"Ahmedabad",ag:"CPCB",do:6.6,bod:22,ph:8.99,turb:350,fcol:null,ec:3450,date:"Feb 2018"},
+  {id:12,name:"Chandola Lake — Ahmedabad",sh:"Chandola Lake",lat:22.987972,lng:72.589067,layer:"lakes",type:"Lake",dist:"Ahmedabad",ag:"CPCB",do:4.9,bod:15,ph:8.2,turb:45,fcol:320,ec:1240,date:"Jun 2020"},
+  {id:13,name:"Nal Sarovar — Sanctuary",sh:"Nal Sarovar",lat:22.793,lng:71.993,layer:"lakes",type:"Lake",dist:"Ahmedabad",ag:"GPCB",do:8.2,bod:5.4,ph:8.0,turb:22,fcol:18,ec:890,date:"Feb 2024"},
+  {id:14,name:"Kankaria Lake — Ahmedabad",sh:"Kankaria Lake",lat:22.993,lng:72.601,layer:"lakes",type:"Lake",dist:"Ahmedabad",ag:"AMC",do:5.8,bod:19,ph:8.4,turb:60,fcol:450,ec:1480,date:"Mar 2024"},
+  {id:15,name:"Wadhwan Lake — Surendranagar",sh:"Wadhwan Lake",lat:22.697,lng:71.683,layer:"lakes",type:"Lake",dist:"Surendranagar",ag:"GPCB",do:7.1,bod:8.2,ph:8.6,turb:28,fcol:82,ec:1120,date:"Jan 2024"},
+  {id:16,name:"Thol Bird Sanctuary Lake",sh:"Thol Lake",lat:23.218,lng:72.351,layer:"lakes",type:"Lake",dist:"Mehsana",ag:"GPCB",do:7.9,bod:4.1,ph:7.8,turb:18,fcol:24,ec:680,date:"Dec 2023"},
+  {id:17,name:"Sardar Sarovar Dam — Reservoir",sh:"Sardar Sarovar",lat:21.830,lng:73.747,layer:"canals",type:"Dam",dist:"Narmada",ag:"SSNNL",do:8.5,bod:1.8,ph:7.5,turb:8,fcol:12,ec:280,date:"Apr 2024"},
+  {id:18,name:"Ukai Dam Reservoir",sh:"Ukai Dam",lat:21.258,lng:73.601,layer:"canals",type:"Dam",dist:"Surat",ag:"GWS&SB",do:7.9,bod:2.4,ph:7.7,turb:15,fcol:28,ec:320,date:"Mar 2024"},
+  {id:19,name:"Narmada Main Canal — Mehsana",sh:"Narmada Canal",lat:23.588,lng:72.384,layer:"canals",type:"Canal",dist:"Mehsana",ag:"GWSSB",do:6.8,bod:4.2,ph:7.9,turb:24,fcol:90,ec:420,date:"May 2024"},
+  {id:20,name:"Dhollera Canal — Distribution",sh:"Dhollera Canal",lat:22.200,lng:72.050,layer:"canals",type:"Canal",dist:"Ahmedabad",ag:"GWSSB",do:5.5,bod:7.8,ph:8.1,turb:38,fcol:220,ec:580,date:"Jun 2024"},
+  {id:21,name:"Mandvi Beach — Kachchh",sh:"Mandvi Beach",lat:22.831,lng:69.354,layer:"beaches",type:"Beach",dist:"Kachchh",ag:"GPCB",do:7.2,bod:2.1,ph:8.1,turb:8,fcol:24,ec:42800,date:"Feb 2024"},
+  {id:22,name:"Alang — Ship-Breaking Coast",sh:"Alang Coast",lat:21.416,lng:72.176,layer:"beaches",type:"Beach",dist:"Bhavnagar",ag:"GPCB",do:5.8,bod:12.4,ph:7.8,turb:48,fcol:180,ec:38600,date:"Jan 2024"},
+  {id:23,name:"Somnath Beach — Gir Somnath",sh:"Somnath Beach",lat:20.907,lng:70.372,layer:"beaches",type:"Beach",dist:"Gir Somnath",ag:"GPCB",do:7.8,bod:1.8,ph:8.0,turb:6,fcol:14,ec:41000,date:"Mar 2024"},
+];
+
+// WQI
+function wqi(s){let sc=0,w=0;if(s.do!=null){sc+=Math.max(0,Math.min(100,(1-s.do/8)*100))*.25;w+=.25}if(s.bod!=null){sc+=Math.min(100,s.bod/30*100)*.25;w+=.25}if(s.ph!=null){sc+=Math.min(100,Math.abs(s.ph-7)*25)*.15;w+=.15}if(s.turb!=null){sc+=Math.min(100,s.turb/200*100)*.15;w+=.15}if(s.fcol!=null){sc+=Math.min(100,(Math.log10(s.fcol+1)/6)*100)*.20;w+=.20}return w>0?Math.round(sc/w*10)/10:50}
+function wqiC(v){if(v<=25)return'#16A34A';if(v<=50)return'#65A30D';if(v<=75)return'#D97706';if(v<=90)return'#EA580C';return'#DC2626'}
+function wqiS(v){if(v<=25)return'EXCELLENT';if(v<=50)return'GOOD';if(v<=75)return'MODERATE';if(v<=90)return'POOR';return'CRITICAL'}
+
+// ─── MAP ───
+const map=L.map('map',{center:[22.5,72.0],zoom:7});
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{attribution:'©CartoDB·CPCB/CWC·Sentinel-2',maxZoom:19}).addTo(map);
+
+const LG={rivers:L.layerGroup(),lakes:L.layerGroup(),canals:L.layerGroup(),beaches:L.layerGroup()};
+const LC={rivers:'#3B8BFF',lakes:'#2A9D8F',canals:'#E9C46A',beaches:'#A8DADC'};
+
+// River lines
+[
+  [[[24.0,72.7],[23.6,72.55],[23.2,72.56],[23.06,72.59],[22.98,72.54],[22.72,72.53],[22.2,72.2],[21.8,72.0]],'rivers'],
+  [[[22.5,74.5],[22.2,74.0],[21.9,73.5],[21.72,72.98],[21.5,72.3]],'rivers'],
+  [[[21.6,73.5],[21.4,73.1],[21.18,72.83]],'rivers'],
+  [[[23.5,74.5],[23.0,74.0],[22.7,73.5],[22.3,73.2],[22.0,72.5]],'rivers'],
+].forEach(([p,l])=>L.polyline(p,{color:'rgba(59,139,255,.35)',weight:1.8,dashArray:'5,5'}).addTo(LG[l]));
+
+function mkIcon(l,v){const c=wqiC(v);const lc=LC[l];return L.divIcon({className:'',html:`<svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="8" fill="${c}" opacity=".15"/><circle cx="11" cy="11" r="5" fill="${c}" opacity=".88"/><circle cx="11" cy="11" r="8" fill="none" stroke="${lc}" stroke-width="1.5" opacity=".5"/></svg>`,iconSize:[22,22],iconAnchor:[11,11]})}
+
+ST.forEach(s=>{
+  const v=wqi(s),c=wqiC(v);
+  const m=L.marker([s.lat,s.lng],{icon:mkIcon(s.layer,v)});
+  m.bindPopup(`<div class="pop-title">${s.sh}</div><div class="pop-sub">${s.dist} · ${s.type} · ${s.ag}</div><div class="pop-grid"><div class="pp"><span class="ppl">DISSOLVED O₂</span><span class="ppv" style="color:${s.do<4?'#FCA5A5':'#86EFAC'}">${s.do??'N/A'} mg/L</span></div><div class="pp"><span class="ppl">BOD</span><span class="ppv" style="color:${s.bod>30?'#FCA5A5':s.bod>10?'#FCD34D':'#86EFAC'}">${s.bod??'N/A'} mg/L</span></div><div class="pp"><span class="ppl">pH</span><span class="ppv" style="color:${(s.ph<6.5||s.ph>8.5)?'#FCD34D':'#93B4FF'}">${s.ph??'N/A'}</span></div><div class="pp"><span class="ppl">TURBIDITY</span><span class="ppv" style="color:${s.turb>100?'#FCA5A5':'#93B4FF'}">${s.turb??'N/A'} NTU</span></div></div><div class="pop-wqi"><span class="pop-wn" style="color:${c}">${Math.round(v)}</span><span class="pop-wl">WQI · ${wqiS(v)}</span></div>`,{maxWidth:255});
+  m.on('click',()=>showDet(s,v));
+  LG[s.layer].addLayer(m);
+});
+Object.values(LG).forEach(l=>l.addTo(map));
+
+function toggleL(n){const t=document.getElementById('ts-'+n);if(t.classList.contains('on')){map.removeLayer(LG[n]);t.classList.remove('on')}else{map.addLayer(LG[n]);t.classList.add('on')}}
+
+function showDet(s,v){
+  document.getElementById('s-ph').style.display='none';
+  document.getElementById('s-det').style.display='block';
+  const c=wqiC(v);
+  document.getElementById('d-wqi').textContent=Math.round(v);
+  document.getElementById('d-wqi').style.color=c;
+  document.getElementById('d-st').textContent=wqiS(v);
+  document.getElementById('d-nm').textContent=s.name;
+  document.getElementById('d-do').textContent=s.do??'N/A';
+  document.getElementById('d-bod').textContent=s.bod??'N/A';
+  document.getElementById('d-ph').textContent=s.ph??'N/A';
+  document.getElementById('d-tu').textContent=s.turb??'N/A';
+  document.getElementById('d-fc').textContent=s.fcol?(s.fcol>=1000?Math.round(s.fcol/1000)+'K':s.fcol):'N/A';
+  document.getElementById('d-ec').textContent=s.ec??'N/A';
+  document.getElementById('d-ag').textContent=s.ag;
+  document.getElementById('d-dt').textContent=s.date;
+  document.getElementById('d-ty').textContent=s.type;
+  document.getElementById('b-do').style.width=Math.min(100,s.do?(1-s.do/8)*100:0)+'%';
+  document.getElementById('b-bod').style.width=Math.min(100,s.bod?s.bod/150*100:0)+'%';
+  document.getElementById('b-ph').style.width=Math.min(100,s.ph?Math.abs(s.ph-7)*30:0)+'%';
+  document.getElementById('b-tu').style.width=Math.min(100,s.turb?s.turb/1600*100:0)+'%';
+  document.getElementById('b-fc').style.width=(s.fcol?Math.min(100,Math.log10(s.fcol+1)/6*100):0)+'%';
+  document.getElementById('b-ec').style.width=Math.min(100,s.ec?s.ec/4000*100:0)+'%';
+}
+
+document.querySelectorAll('.yb').forEach(b=>b.addEventListener('click',function(){document.querySelectorAll('.yb').forEach(x=>x.classList.remove('on'));this.classList.add('on')}));
+
+// District chart
+const DD={Ahmedabad:{do:5.4,bod:39,turb:140},Kheda:{do:0.6,bod:43,turb:91},Vadodara:{do:6.4,bod:8.5,turb:34},Surat:{do:5.1,bod:28,turb:68},Bharuch:{do:7.8,bod:3.2,turb:12}};
+Chart.defaults.color='rgba(176,168,152,.7)';
+Chart.defaults.borderColor='rgba(245,240,230,.07)';
+const tip={backgroundColor:'#1A1916',borderColor:'rgba(245,240,230,.12)',borderWidth:1,titleColor:'#F5F0E8',bodyColor:'#B0A898'};
+const dch=new Chart(document.getElementById('distC').getContext('2d'),{type:'bar',data:{labels:['DO','BOD','Turbidity'],datasets:[{data:[5.4,39,140],backgroundColor:['rgba(22,163,74,.5)','rgba(217,119,6,.5)','rgba(234,88,12,.5)'],borderColor:['#16A34A','#D97706','#EA580C'],borderWidth:1}]},options:{responsive:true,plugins:{legend:{display:false},tooltip:tip},scales:{x:{grid:{color:'rgba(245,240,230,.05)'},ticks:{font:{size:9}}},y:{grid:{color:'rgba(245,240,230,.05)'},ticks:{font:{size:9}}}}}});
+function updateDist(){const d=DD[document.getElementById('distSel').value];dch.data.datasets[0].data=[d.do,d.bod,d.turb];dch.update()}
+
+// ─── DASHBOARD CHARTS ───
+// BOD trend
+new Chart(document.getElementById('bodC').getContext('2d'),{type:'line',data:{labels:['Jan 18','Jun 18','Feb 19','May 19','Jun 20','Jul 20','Feb 23','Mar 24'],datasets:[
+  {label:'Railway Bridge',data:[null,47,14,15,null,null,null,20],borderColor:'#3B8BFF',backgroundColor:'rgba(59,139,255,.08)',tension:.4,fill:true,pointRadius:4,pointBackgroundColor:'#3B8BFF'},
+  {label:'V.N. Bridge',data:[79,null,125,null,null,null,null,102],borderColor:'#DC2626',backgroundColor:'rgba(220,38,38,.08)',tension:.4,fill:true,pointRadius:4,pointBackgroundColor:'#DC2626'},
+  {label:'Vautha/Dhokla',data:[39,40,50,26,null,null,null,39],borderColor:'#D97706',backgroundColor:'rgba(217,119,6,.08)',tension:.4,fill:true,pointRadius:4,pointBackgroundColor:'#D97706'},
+  {label:'Vautha, Kheda',data:[null,null,null,null,null,null,43,31],borderColor:'#EA580C',backgroundColor:'rgba(234,88,12,.08)',tension:.4,fill:true,pointRadius:4,pointBackgroundColor:'#EA580C'},
+]},options:{responsive:true,plugins:{legend:{labels:{font:{size:10},boxWidth:10,padding:12}},tooltip:tip},scales:{x:{ticks:{font:{size:9},maxRotation:30}},y:{title:{display:true,text:'BOD (mg/L)',font:{size:9}}}}}});
+
+// DO chart
+const dos=ST.filter(s=>s.do!=null);
+new Chart(document.getElementById('doC').getContext('2d'),{type:'bar',data:{labels:dos.map(s=>s.sh),datasets:[
+  {label:'DO (mg/L)',data:dos.map(s=>s.do),backgroundColor:dos.map(s=>s.do<4?'rgba(220,38,38,.7)':s.do<6?'rgba(217,119,6,.7)':'rgba(22,163,74,.7)'),borderColor:dos.map(s=>s.do<4?'#DC2626':s.do<6?'#D97706':'#16A34A'),borderWidth:1},
+  {label:'CPCB Minimum (6 mg/L)',data:dos.map(()=>6),type:'line',borderColor:'rgba(59,139,255,.6)',borderDash:[5,5],pointRadius:0,borderWidth:1.5}
+]},options:{indexAxis:'y',responsive:true,plugins:{legend:{labels:{font:{size:10},boxWidth:10,padding:12}},tooltip:tip},scales:{x:{ticks:{font:{size:9}}},y:{ticks:{font:{size:8}}}}}});
+
+// Fecal Coliform
+new Chart(document.getElementById('fcC').getContext('2d'),{type:'bar',data:{labels:['Vautha\n(Kheda)','Tapi\nSurat','Sabar.\nD/S','Sabar.\nVN Br.','Kankaria\nLake','Chandola\nLake','Mahi\nVadodara','Narmada\nBharuch'],datasets:[
+  {label:'Fecal Coliform (MPN/100mL)',data:[790000,2400,920,1200,450,320,380,45],backgroundColor:['rgba(220,38,38,.7)','rgba(234,88,12,.7)','rgba(234,88,12,.7)','rgba(217,119,6,.7)','rgba(101,163,13,.7)','rgba(101,163,13,.7)','rgba(101,163,13,.7)','rgba(22,163,74,.7)'],borderColor:['#DC2626','#EA580C','#EA580C','#D97706','#65A30D','#65A30D','#65A30D','#16A34A'],borderWidth:1},
+  {label:'CPCB Limit (500 MPN)',data:Array(8).fill(500),type:'line',borderColor:'rgba(220,38,38,.55)',borderDash:[5,5],pointRadius:0,borderWidth:1.5}
+]},options:{responsive:true,plugins:{legend:{labels:{font:{size:10},boxWidth:10,padding:12}},tooltip:tip},scales:{x:{ticks:{font:{size:8}}},y:{type:'logarithmic',title:{display:true,text:'MPN/100mL (log)',font:{size:9}}}}}});
+
+// WQI District
+new Chart(document.getElementById('wqiC').getContext('2d'),{type:'bar',data:{
+  labels:['Narmada','Gir Somnath','Kachchh','Surendranagar','Vadodara','Bhavnagar','Mehsana','Surat','Ahmedabad','Kheda'],
+  datasets:[{label:'WQI Score',data:[12,14,20,18,34,42,28,58,71,95],
+    backgroundColor:['rgba(22,163,74,.65)','rgba(22,163,74,.65)','rgba(22,163,74,.65)','rgba(22,163,74,.65)','rgba(101,163,13,.65)','rgba(101,163,13,.65)','rgba(101,163,13,.65)','rgba(217,119,6,.65)','rgba(217,119,6,.65)','rgba(220,38,38,.65)'],
+    borderColor:['#16A34A','#16A34A','#16A34A','#16A34A','#65A30D','#65A30D','#65A30D','#D97706','#D97706','#DC2626'],borderWidth:1}]
+},options:{indexAxis:'y',responsive:true,plugins:{legend:{labels:{font:{size:10},boxWidth:10,padding:12}},tooltip:tip},scales:{x:{max:100},y:{ticks:{font:{size:8}}}}}});
+
+// ─── SATELLITE CANVASES ───
+function satDraw(id,type){
+  const cv=document.getElementById(id);
+  cv.width=cv.offsetWidth||320;cv.height=cv.offsetHeight||170;
+  const cx=cv.getContext('2d'),w=cv.width,h=cv.height;
+  if(type==='ndwi'){
+    const g=cx.createLinearGradient(0,0,w,h);g.addColorStop(0,'#050e1c');g.addColorStop(1,'#081525');cx.fillStyle=g;cx.fillRect(0,0,w,h);
+    [[.35,.45,.18,.26,.4],[.64,.32,.1,.17,.28],[.74,.72,.07,.1,.2]].forEach(([bx,by,rx,ry,al])=>{
+      const gr=cx.createRadialGradient(w*bx,h*by,3,w*bx,h*by,w*rx);
+      gr.addColorStop(0,`rgba(34,100,220,${al+.3})`);gr.addColorStop(.6,`rgba(20,60,140,${al})`);gr.addColorStop(1,'rgba(0,0,0,0)');
+      cx.fillStyle=gr;cx.beginPath();cx.ellipse(w*bx,h*by,w*rx,h*ry,0,0,Math.PI*2);cx.fill()});
+    cx.strokeStyle='rgba(100,160,255,.5)';cx.lineWidth=2;cx.beginPath();cx.moveTo(0,h*.26);cx.bezierCurveTo(w*.3,h*.38,w*.55,h*.48,w,h*.6);cx.stroke();
+    const lg=cx.createLinearGradient(10,h-15,90,h-15);lg.addColorStop(0,'#002277');lg.addColorStop(1,'#55AAFF');cx.fillStyle=lg;cx.fillRect(10,h-14,80,6);
+    cx.fillStyle='rgba(176,168,152,.6)';cx.font='7px monospace';cx.fillText('NDWI  -1.0 → +1.0',10,h-3);
+  } else if(type==='ndci'){
+    cx.fillStyle='#060e09';cx.fillRect(0,0,w,h);
+    for(let i=0;i<7;i++){const bx=w*(.12+Math.random()*.76),by=h*(.12+Math.random()*.76),r=12+Math.random()*40,it=.25+Math.random()*.6;const gr=cx.createRadialGradient(bx,by,1,bx,by,r);gr.addColorStop(0,`rgba(${Math.floor(30*it)},${Math.floor(200*it)},${Math.floor(60*it)},.9)`);gr.addColorStop(1,'rgba(0,50,10,0)');cx.fillStyle=gr;cx.beginPath();cx.arc(bx,by,r,0,Math.PI*2);cx.fill()}
+    cx.strokeStyle='rgba(59,139,255,.3)';cx.lineWidth=1.5;cx.setLineDash([3,4]);cx.beginPath();cx.ellipse(w*.45,h*.5,w*.28,h*.32,.3,0,Math.PI*2);cx.stroke();cx.setLineDash([]);
+    cx.fillStyle='rgba(176,168,152,.6)';cx.font='7px monospace';cx.fillText('NDCI  Chl-a Concentration',10,h-4);
+  } else {
+    const tg=cx.createLinearGradient(0,h,w,0);tg.addColorStop(0,'rgba(90,30,5,.9)');tg.addColorStop(.4,'rgba(200,100,10,.55)');tg.addColorStop(1,'rgba(5,15,30,.3)');cx.fillStyle=tg;cx.fillRect(0,0,w,h);
+    const pl=cx.createRadialGradient(w*.28,h*.65,4,w*.28,h*.65,w*.38);pl.addColorStop(0,'rgba(255,120,20,.7)');pl.addColorStop(.55,'rgba(200,70,10,.3)');pl.addColorStop(1,'rgba(0,0,0,0)');cx.fillStyle=pl;cx.beginPath();cx.ellipse(w*.3,h*.65,w*.26,h*.2,-.25,0,Math.PI*2);cx.fill();
+    [[w*.22,h*.58],[w*.43,h*.52],[w*.62,h*.42]].forEach(([x,y])=>{cx.fillStyle='#DC2626';cx.beginPath();cx.arc(x,y,3.5,0,Math.PI*2);cx.fill();cx.strokeStyle='rgba(220,38,38,.4)';cx.beginPath();cx.arc(x,y,8,0,Math.PI*2);cx.stroke()});
+    cx.fillStyle='rgba(176,168,152,.6)';cx.font='7px monospace';cx.fillText('NDTI  Sediment/Turbidity Index',10,h-4);
+  }
+}
+setTimeout(()=>{satDraw('sc1','ndwi');satDraw('sc2','ndci');satDraw('sc3','ndti')},300);
+
+// Satellite pass table
+const passes=[
+  {date:'2025-05-20',sat:'Sentinel-2B',cloud:'8%',ndwi:'0.44',ndci:'0.18',st:'PROCESSED'},
+  {date:'2025-05-15',sat:'Sentinel-2A',cloud:'22%',ndwi:'0.41',ndci:'0.21',st:'PROCESSED'},
+  {date:'2025-05-10',sat:'Sentinel-2B',cloud:'64%',ndwi:'N/A',ndci:'N/A',st:'CLOUDY'},
+  {date:'2025-05-05',sat:'Sentinel-2A',cloud:'5%',ndwi:'0.43',ndci:'0.15',st:'PROCESSED'},
+  {date:'2025-04-30',sat:'Sentinel-2B',cloud:'11%',ndwi:'0.42',ndci:'0.17',st:'PROCESSED'},
+  {date:'2025-04-25',sat:'Sentinel-2A',cloud:'38%',ndwi:'0.40',ndci:'N/A',st:'PARTIAL'},
+];
+const tb=document.getElementById('stbody');
+passes.forEach((p,i)=>{
+  const c=p.st==='PROCESSED'?'#86EFAC':p.st==='CLOUDY'?'#FCA5A5':'#FCD34D';
+  const bg=p.st==='PROCESSED'?'rgba(22,163,74,.12)':p.st==='CLOUDY'?'rgba(220,38,38,.12)':'rgba(217,119,6,.12)';
+  tb.innerHTML+=`<tr style="background:${i%2?'rgba(245,240,230,.015)':'transparent'}"><td>${p.date}</td><td>${p.sat}</td><td style="color:${parseFloat(p.cloud)>40?'#FCD34D':'#B0A898'}">${p.cloud}</td><td style="color:#93B4FF">${p.ndwi}</td><td style="color:${parseFloat(p.ndci)>0.2?'#FCD34D':'#93B4FF'}">${p.ndci}</td><td><span style="color:${c};background:${bg};padding:2px 9px;border-radius:4px;font-size:.6rem;font-family:var(--mono)">${p.st}</span></td></tr>`;
+});
+</script>
+</body>
+</html>
