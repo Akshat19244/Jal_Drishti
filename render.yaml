@@ -12,3 +12,5 @@ services:
         value: false
       - key: CSV_PATH
         value: /tmp/india_research_full.csv
+      - key: GDRIVE_FILE_ID
+        sync: false   # Set this in the Render dashboard → Environment

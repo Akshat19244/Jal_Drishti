@@ -58,19 +58,14 @@ class DataService:
             gdrive_id = os.getenv("GDRIVE_FILE_ID")
             if gdrive_id:
                 print("[DataService] CSV not found. Downloading from Google Drive...")
-                download_url = f"https://drive.google.com/uc?export=download&id={gdrive_id}"
-                response = requests.get(download_url, stream=True)
-
-            if response.status_code == 200:
-                with open(csv_path, "wb") as f:
-                    for chunk in response.iter_content(chunk_size=8192):
-                        if chunk:
-                            f.write(chunk)
-                            print(f"[DataService] Downloaded CSV to {csv_path}")
-                        else:
-                            raise RuntimeError(
-                                f"Failed to download CSV. HTTP {response.status_code}"
-                            )
+                try:
+                    import gdown
+                    gdown.download(id=gdrive_id, output=csv_path, quiet=False)
+                    print(f"[DataService] Downloaded CSV to {csv_path}")
+                except Exception as dl_err:
+                    raise RuntimeError(
+                        f"Failed to download CSV from Google Drive (id={gdrive_id}): {dl_err}"
+                    )
 
         if not os.path.exists(csv_path):
             tried_str = "\n".join([f"  - {p}" for p in tried])
