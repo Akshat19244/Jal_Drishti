@@ -2,7 +2,9 @@
  * Instantiation is handled by init.js (loaded last).
  */
 
-const API_BASE = 'http://localhost:5000';
+const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'http://localhost:5000'
+  : 'https://jal-drishti-sz9o.onrender.com';
 
 class JalDrishti {
   constructor() {
