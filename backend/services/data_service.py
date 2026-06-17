@@ -129,18 +129,47 @@ class DataService:
         )
         DataService._df['Date_Parsed'] = parsed_a.fillna(parsed_b).fillna(parsed_b2)
 
-        # Compute WQI for all rows
-        DataService._df['WQI'] = DataService._df.apply(
-            lambda row: calculate_wqi(
-                do=row.get('DO'),
-                bod=row.get('BOD'),
-                ph=row.get('pH'),
-                turbidity=row.get('Turbidity'),
-                fcol=row.get('Fecal_Coliform')
-            ), axis=1
-        )
+        # Compute WQI for all rows — VECTORIZED (replaces slow apply)
+        df = DataService._df
+        DO  = df['DO'].astype('float32')
+        BOD = df['BOD'].astype('float32')
+        PH  = df['pH'].astype('float32')
+        TUR = df['Turbidity'].astype('float32')
+        FCO = df['Fecal_Coliform'].astype('float32')
 
-        DataService._df['WQI_Class'] = DataService._df['WQI'].apply(classify_wqi)
+        do_score  = (1 - DO.clip(upper=8) / 8) * 100
+        bod_score = (BOD / 30 * 100).clip(upper=100)
+        ph_score  = ((PH - 7).abs() * 25).clip(upper=100)
+        tur_score = (TUR / 200 * 100).clip(upper=100)
+        fco_score = (np.log10(FCO.clip(lower=0) + 1) / 6 * 100).clip(upper=100)
+
+        # Weighted sum & weights (only where data is present)
+        w_do  = DO.notna().astype('float32')  * 0.25
+        w_bod = BOD.notna().astype('float32') * 0.25
+        w_ph  = PH.notna().astype('float32')  * 0.15
+        w_tur = TUR.notna().astype('float32') * 0.15
+        w_fco = FCO.notna().astype('float32') * 0.20
+
+        total_w = w_do + w_bod + w_ph + w_tur + w_fco
+        weighted = (
+            do_score.fillna(0)  * w_do  +
+            bod_score.fillna(0) * w_bod +
+            ph_score.fillna(0)  * w_ph  +
+            tur_score.fillna(0) * w_tur +
+            fco_score.fillna(0) * w_fco
+        )
+        DataService._df['WQI'] = (weighted / total_w.replace(0, float('nan'))).round(1).fillna(50.0)
+
+        # Vectorized WQI classification
+        wqi = DataService._df['WQI']
+        conditions = [
+            wqi <= 25,
+            wqi <= 50,
+            wqi <= 75,
+            wqi <= 90,
+        ]
+        choices = ['Excellent', 'Good', 'Moderate', 'Poor']
+        DataService._df['WQI_Class'] = np.select(conditions, choices, default='Critical')
 
         rows = len(DataService._df)
         states = DataService._df['State'].nunique()
