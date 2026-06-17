@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: jaldrishti-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn "app:create_app()" --bind 0.0.0.0:$PORT --workers 1 --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DEBUG
+        value: false
+      - key: CSV_PATH
+        value: /tmp/india_research_full.csv
