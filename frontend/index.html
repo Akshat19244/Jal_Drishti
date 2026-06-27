@@ -12,6 +12,8 @@
   
   <!-- Leaflet -->
   <link rel="stylesheet" href="assets/vendor/leaflet.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/MarkerCluster.Default.css">
   
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@400;700&family=Outfit:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
@@ -91,8 +93,10 @@
     <li><a href="#hero">Home</a></li>
     <li><a href="#map-sec">Map</a></li>
     <li><a href="#explorer">Explorer</a></li>
+    <li><a href="#predict-sec">Predict</a></li>
     <li><a href="#alerts">Alerts</a></li>
     <li><a href="#beaches">Beaches</a></li>
+    <li><a href="#sentinel">Sentinel-2</a></li>
   </ul>
 
   <div style="display: flex; gap: 1rem; align-items: center;">
@@ -282,7 +286,61 @@
       </div>
 
       <!-- Map -->
-      <div id="map" style="border-radius: 10px; border: 1px solid var(--border);"></div>
+      <div id="map" style="border-radius: 10px; border: 1px solid var(--border);position:relative">
+        <!-- Floating Filter Panel -->
+        <div id="mapFilterPanel" style="position:absolute;top:10px;left:10px;z-index:1000;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px;box-shadow:0 4px 16px rgba(0,0,0,.3);max-width:280px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span style="font-weight:600;font-size:.8rem;color:var(--t1)">Map Filters</span>
+            <button id="toggleFilters" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:1rem">−</button>
+          </div>
+          
+          <div id="filterContent">
+            <!-- Station Search -->
+            <div style="margin-bottom:10px;position:relative">
+              <input type="text" id="mapStationSearch" placeholder="Search stations..." 
+                style="width:100%;background:var(--bg3);border:1px solid var(--border);color:var(--t1);
+                font-family:var(--mono);font-size:.7rem;padding:6px 10px;border-radius:4px">
+              <div id="searchResults" style="position:absolute;top:100%;left:0;right:0;background:var(--card);
+                border:1px solid var(--border);border-radius:4px;max-height:200px;overflow-y:auto;
+                display:none;z-index:1001"></div>
+            </div>
+
+            <!-- Color By Parameter -->
+            <div style="margin-bottom:10px">
+              <label style="font-family:var(--mono);font-size:.65rem;color:var(--t3);display:block;margin-bottom:4px">Color By</label>
+              <select id="colorBySelect" style="width:100%;background:var(--bg3);border:1px solid var(--border);
+                color:var(--t2);font-family:var(--mono);font-size:.7rem;padding:6px 10px;border-radius:4px">
+                <option value="wqi">WQI</option>
+                <option value="do">Dissolved Oxygen</option>
+                <option value="bod">BOD</option>
+                <option value="ph">pH</option>
+                <option value="fcol">Fecal Coliform</option>
+              </select>
+            </div>
+
+            <!-- Safety Filter -->
+            <div style="margin-bottom:10px">
+              <label style="font-family:var(--mono);font-size:.65rem;color:var(--t3);display:block;margin-bottom:4px">Safety Status</label>
+              <select id="safetyFilterSelect" style="width:100%;background:var(--bg3);border:1px solid var(--border);
+                color:var(--t2);font-family:var(--mono);font-size:.7rem;padding:6px 10px;border-radius:4px">
+                <option value="all">All</option>
+                <option value="safe">Safe (WQI ≥ 70)</option>
+                <option value="moderate">Moderate (40-70)</option>
+                <option value="unsafe">Unsafe (WQI < 40)</option>
+              </select>
+            </div>
+
+            <button id="applyMapFilters" style="width:100%;background:var(--sap);color:#fff;border:none;
+              padding:6px 12px;border-radius:4px;cursor:pointer;font-family:var(--mono);font-size:.7rem">
+              Apply Filters
+            </button>
+            <button id="resetMapFilters" style="width:100%;background:var(--bg3);color:var(--t2);border:1px solid var(--border);
+              padding:6px 12px;border-radius:4px;cursor:pointer;font-family:var(--mono);font-size:.7rem;margin-top:4px">
+              Reset
+            </button>
+          </div>
+        </div>
+      </div>
 
       <!-- Right Panel -->
       <div class="msb">
@@ -308,6 +366,14 @@
               <div class="pval"><span id="paramPH">-</span></div>
             </div>
             <div class="pc">
+              <span class="plbl">Temp</span>
+              <div class="pval"><span id="paramTemp">-</span> <span class="punit">°C</span></div>
+            </div>
+            <div class="pc">
+              <span class="plbl">EC</span>
+              <div class="pval"><span id="paramEC">-</span> <span class="punit">µS/cm</span></div>
+            </div>
+            <div class="pc">
               <span class="plbl">Turbidity</span>
               <div class="pval"><span id="paramTurb">-</span> <span class="punit">NTU</span></div>
             </div>
@@ -328,8 +394,86 @@
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <section id="dash">
   <div style="padding: 0 3rem;">
-    <div class="section-eyebrow">Analytical Views</div>
-    <h2 class="section-title">Dashboard Charts</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+      <div>
+        <div class="section-eyebrow">Analytical Views</div>
+        <h2 class="section-title" style="margin-bottom:0">Dashboard Charts</h2>
+      </div>
+      <button id="wqiInfoBtn" style="background:var(--bg3);border:1px solid var(--border);color:var(--t3);
+        padding:6px 12px;border-radius:6px;cursor:pointer;font-family:var(--mono);font-size:.7rem;display:flex;align-items:center;gap:.4rem">
+        ⓘ WQI Methodology
+      </button>
+    </div>
+
+    <!-- WQI Methodology Panel (Collapsible) -->
+    <div id="wqiMethodologyPanel" style="display:none;background:var(--card);border:1px solid var(--border);
+      border-radius:12px;padding:1.5rem;margin-bottom:2rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h3 style="font-size:1.1rem;margin:0;color:var(--t1)">Water Quality Index (WQI) Methodology</h3>
+        <button id="closeWqiPanel" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:1.2rem">✕</button>
+      </div>
+
+      <div style="font-family:var(--mono);font-size:.85rem;color:var(--t2);margin-bottom:1rem;padding:1rem;background:var(--bg3);border-radius:6px">
+        <strong>WQI Formula:</strong> WQI = Σ (W<sub>i</sub> × q<sub>i</sub>)
+      </div>
+
+      <div style="font-family:var(--mono);font-size:.75rem;color:var(--t3);margin-bottom:1.5rem">
+        Where q<sub>i</sub> = [(C<sub>i</sub> - S<sub>min</sub>) / (S<sub>max</sub> - S<sub>min</sub>)] × 100<br>
+        W<sub>i</sub> = weight of parameter i
+      </div>
+
+      <table style="width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.75rem;margin-bottom:1.5rem">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border)">
+            <th style="padding:8px;text-align:left;color:var(--t1)">Parameter</th>
+            <th style="padding:8px;text-align:left;color:var(--t1)">CPCB Standard (Max)</th>
+            <th style="padding:8px;text-align:center;color:var(--t1)">Weight</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:8px;color:var(--t2)">Dissolved Oxygen (DO)</td>
+            <td style="padding:8px;color:var(--t2)">≥ 4 mg/L</td>
+            <td style="padding:8px;text-align:center;color:var(--sap);font-weight:600">0.31</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:8px;color:var(--t2)">Biochemical Oxygen Demand (BOD)</td>
+            <td style="padding:8px;color:var(--t2)">≤ 3 mg/L</td>
+            <td style="padding:8px;text-align:center;color:var(--sap);font-weight:600">0.24</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:8px;color:var(--t2)">pH</td>
+            <td style="padding:8px;color:var(--t2)">6.5–8.5</td>
+            <td style="padding:8px;text-align:center;color:var(--sap);font-weight:600">0.17</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:8px;color:var(--t2)">Fecal Coliform</td>
+            <td style="padding:8px;color:var(--t2)">≤ 500 MPN/100mL</td>
+            <td style="padding:8px;text-align:center;color:var(--sap);font-weight:600">0.16</td>
+          </tr>
+          <tr>
+            <td style="padding:8px;color:var(--t2)">Electrical Conductivity (EC)</td>
+            <td style="padding:8px;color:var(--t2)">≤ 1500 µS/cm</td>
+            <td style="padding:8px;text-align:center;color:var(--sap);font-weight:600">0.12</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem">
+        <div style="background:var(--ok-dim);border:1px solid rgba(22,163,74,.3);border-radius:8px;padding:1rem;text-align:center">
+          <div style="font-size:1.2rem;font-weight:700;color:#4ADE80;margin-bottom:.3rem">70–100</div>
+          <div style="font-size:.75rem;color:var(--t3)">Safe</div>
+        </div>
+        <div style="background:var(--warn-dim);border:1px solid rgba(180,83,9,.3);border-radius:8px;padding:1rem;text-align:center">
+          <div style="font-size:1.2rem;font-weight:700;color:#FCD34D;margin-bottom:.3rem">40–70</div>
+          <div style="font-size:.75rem;color:var(--t3)">Moderate</div>
+        </div>
+        <div style="background:var(--crit-dim);border:1px solid rgba(185,28,28,.3);border-radius:8px;padding:1rem;text-align:center">
+          <div style="font-size:1.2rem;font-weight:700;color:#FCA5A5;margin-bottom:.3rem">0–40</div>
+          <div style="font-size:.75rem;color:var(--t3)">Unsafe</div>
+        </div>
+      </div>
+    </div>
 
     <div class="dgrid">
       <div class="cp">
@@ -386,6 +530,117 @@
     <div class="explorer-view" data-view-content="river">
       <div class="accordion-wrapper">
         <!-- Populated by explorer.js -->
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- ML PREDICTOR                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="predict-sec">
+  <div style="padding: 0 3rem;">
+    <div class="section-eyebrow">AI-Powered Forecasting</div>
+    <h2 class="section-title">Water Quality Predictor</h2>
+    <p style="font-size: .95rem; color: var(--t2); max-width: 600px; margin-bottom: 2rem;">
+      Predict tomorrow's water quality parameters using machine learning models trained on historical CPCB data.
+    </p>
+
+    <div style="display: grid; grid-template-columns: 300px 1fr; gap: 2rem; align-items: start;">
+      <!-- Prediction Controls -->
+      <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+        <div style="font-weight: 600; font-size: .9rem; margin-bottom: 1rem; color: var(--t1);">Select Parameters</div>
+
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; font-size: .75rem; color: var(--t3); margin-bottom: .4rem;">State</label>
+          <select id="predictState" class="dsel" style="width: 100%;">
+            <option value="">Select State</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; font-size: .75rem; color: var(--t3); margin-bottom: .4rem;">Station</label>
+          <select id="predictStation" class="dsel" style="width: 100%;">
+            <option value="">Select Station</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display: block; font-size: .75rem; color: var(--t3); margin-bottom: .4rem;">Parameter to Predict</label>
+          <select id="predictParameter" class="dsel" style="width: 100%;">
+            <option value="DO">Dissolved Oxygen (DO)</option>
+            <option value="BOD">Biochemical Oxygen Demand (BOD)</option>
+            <option value="pH">pH Level</option>
+            <option value="Fecal_Coliform">Fecal Coliform</option>
+            <option value="EC">Electrical Conductivity (EC)</option>
+            <option value="Temperature">Temperature</option>
+          </select>
+        </div>
+
+        <button id="predictBtn" class="btn-solid" style="width: 100%;">Predict Tomorrow's Value</button>
+      </div>
+
+      <!-- Prediction Results -->
+      <div id="predictResults" style="display: none;">
+        <!-- Prediction Card -->
+        <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; margin-bottom: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1.5rem;">
+            <div>
+              <div style="font-size: .75rem; color: var(--t3); margin-bottom: .3rem;">Predicted Value for Tomorrow</div>
+              <div style="display: flex; align-items: baseline; gap: .5rem;">
+                <span id="predValue" style="font-size: 3rem; font-weight: 700; color: var(--sap);">-</span>
+                <span id="predUnit" style="font-size: 1rem; color: var(--t3);">mg/L</span>
+              </div>
+            </div>
+            <div>
+              <span id="predStatus" class="pred-badge">-</span>
+              <div id="predWQI" style="font-family: var(--mono); font-size: .85rem; color: var(--t3); margin-top: .5rem;">WQI: -</div>
+            </div>
+          </div>
+
+          <div style="font-family: var(--mono); font-size: .7rem; color: var(--t3);">
+            Station: <span id="predStation" style="color: var(--t2);">-</span> ·
+            Parameter: <span id="predParameter" style="color: var(--t2);">-</span>
+          </div>
+        </div>
+
+        <!-- 7-Day Forecast Chart -->
+        <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
+          <div style="font-weight: 600; font-size: .9rem; margin-bottom: 1rem; color: var(--t1);">7-Day Forecast</div>
+          <div style="position: relative; height: 250px; width: 100%;">
+            <canvas id="forecastChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Confusion Matrix & Metrics -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+          <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+            <div style="font-weight: 600; font-size: .9rem; margin-bottom: 1rem; color: var(--t1);">Confusion Matrix</div>
+            <div id="confusionMatrix"></div>
+            <div style="font-family: var(--mono); font-size: .6rem; color: var(--t3); margin-top: .8rem;">
+              Rows: Actual Class · Columns: Predicted Class
+            </div>
+          </div>
+
+          <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+            <div style="font-weight: 600; font-size: .9rem; margin-bottom: 1rem; color: var(--t1);">Model Performance</div>
+            <div id="modelMetrics" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: .8rem;"></div>
+          </div>
+        </div>
+
+        <!-- WQI Equation -->
+        <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-top: 1.5rem;">
+          <div style="font-weight: 600; font-size: .9rem; margin-bottom: 1rem; color: var(--t1);">WQI Calculation</div>
+          <div style="font-family: var(--mono); font-size: .85rem; color: var(--t2); margin-bottom: 1rem;">
+            WQI = Σ (W<sub>i</sub> × q<sub>i</sub>)
+          </div>
+          <div style="font-family: var(--mono); font-size: .75rem; color: var(--t3); margin-bottom: 1rem;">
+            q<sub>i</sub> = [(C<sub>i</sub> - S<sub>min</sub>) / (S<sub>max</sub> - S<sub>min</sub>)] × 100
+          </div>
+          <div style="font-size: .75rem; color: var(--t3);">
+            <strong>Weights:</strong> DO=0.31 | BOD=0.24 | pH=0.17 | Fecal Coliform=0.16 | EC=0.12
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -462,6 +717,106 @@
         Data: CPCB coastal monitoring network · Fecal Coliform (MPN/100mL) ·
         CPCB Bathing Water Standard: ≤ 500 MPN/100mL · WHO Standard: ≤ 400 MPN/100mL
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- SENTINEL-2 INDICES                                              -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section id="sentinel">
+  <div style="padding: 0 3rem;">
+    <div class="section-eyebrow">Satellite Remote Sensing</div>
+    <h2 class="section-title">Sentinel-2 Advanced Indices</h2>
+    <p style="font-size: .95rem; color: var(--t2); max-width: 600px; margin-bottom: 2rem;">
+      Advanced water quality indices derived from Sentinel-2 satellite imagery for ecological monitoring.
+    </p>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+      <!-- CDOM -->
+      <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+          <div>
+            <div style="font-weight: 600; font-size: 1rem; color: var(--t1); margin-bottom: .3rem;">CDOM</div>
+            <div style="font-family: var(--mono); font-size: .65rem; color: var(--t3);">Colored Dissolved Organic Matter</div>
+          </div>
+          <span id="cdomBadge" class="pred-badge status-safe">Low</span>
+        </div>
+        <div style="font-family: var(--mono); font-size: .75rem; color: var(--t3); margin-bottom: .8rem;">
+          Formula: Band 3 / Band 4 ratio
+        </div>
+        <div style="font-size: .8rem; color: var(--t2); margin-bottom: 1rem;">
+          <span id="cdomValue">0.45</span> (proxy from BOD correlation)
+        </div>
+        <div style="font-size: .7rem; color: var(--t3); line-height: 1.5;">
+          Indicates humic acids and tannins from decaying vegetation. High values suggest elevated organic matter.
+        </div>
+      </div>
+
+      <!-- Turbidity -->
+      <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+          <div>
+            <div style="font-weight: 600; font-size: 1rem; color: var(--t1); margin-bottom: .3rem;">Turbidity Index</div>
+            <div style="font-family: var(--mono); font-size: .65rem; color: var(--t3);">Water Clarity</div>
+          </div>
+          <span id="turbidityBadge" class="pred-badge status-moderate">Moderate</span>
+        </div>
+        <div style="font-family: var(--mono); font-size: .75rem; color: var(--t3); margin-bottom: .8rem;">
+          Formula: (B4 − B3) / (B4 + B3)
+        </div>
+        <div style="font-size: .8rem; color: var(--t2); margin-bottom: 1rem;">
+          <span id="turbidityValue">0.62</span> (proxy from Turbidity correlation)
+        </div>
+        <div style="font-size: .7rem; color: var(--t3); line-height: 1.5;">
+          Measures suspended sediment load. High turbidity reduces light penetration and affects aquatic life.
+        </div>
+      </div>
+
+      <!-- Chlorophyll-a -->
+      <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+          <div>
+            <div style="font-weight: 600; font-size: 1rem; color: var(--t1); margin-bottom: .3rem;">Chlorophyll-a</div>
+            <div style="font-family: var(--mono); font-size: .65rem; color: var(--t3);">Algal Biomass</div>
+          </div>
+          <span id="chlorophyllBadge" class="pred-badge status-safe">Low</span>
+        </div>
+        <div style="font-family: var(--mono); font-size: .75rem; color: var(--t3); margin-bottom: .8rem;">
+          Formula: (B5 − B4) / (B5 + B4)
+        </div>
+        <div style="font-size: .8rem; color: var(--t2); margin-bottom: 1rem;">
+          <span id="chlorophyllValue">0.38</span> (proxy from BOD correlation)
+        </div>
+        <div style="font-size: .7rem; color: var(--t3); line-height: 1.5;">
+          Eutrophication indicator. High chlorophyll suggests algal blooms and potential oxygen depletion.
+        </div>
+      </div>
+
+      <!-- Kd490 -->
+      <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+          <div>
+            <div style="font-weight: 600; font-size: 1rem; color: var(--t1); margin-bottom: .3rem;">Kd490</div>
+            <div style="font-family: var(--mono); font-size: .65rem; color: var(--t3);">Light Attenuation</div>
+          </div>
+          <span id="kd490Badge" class="pred-badge status-safe">Good</span>
+        </div>
+        <div style="font-family: var(--mono); font-size: .75rem; color: var(--t3); margin-bottom: .8rem;">
+          Formula: B2 / B4 (proxy)
+        </div>
+        <div style="font-size: .8rem; color: var(--t2); margin-bottom: 1rem;">
+          <span id="kd490Value">0.28</span> m⁻¹ (proxy from DO correlation)
+        </div>
+        <div style="font-size: .7rem; color: var(--t3); line-height: 1.5;">
+          Diffuse attenuation coefficient at 490nm. Indicates light penetration depth for photosynthesis.
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 2rem; padding: 1rem; background: var(--bg3); border-radius: 8px; font-family: var(--mono); font-size: .7rem; color: var(--t3);">
+      <strong>Note:</strong> Values shown are derived from correlated CPCB parameters (BOD, Turbidity, DO) as live Sentinel-2 data is not available. 
+      In production, these would be computed directly from Sentinel-2 Band 2-5 imagery.
     </div>
   </div>
 </section>
@@ -600,6 +955,7 @@
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <!-- Leaflet -->
 <script src="assets/vendor/leaflet.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.markercluster/1.5.3/leaflet.markercluster.js"></script>
 
 <!-- Chart.js -->
 <script src="assets/vendor/chart.min.js"></script>
@@ -610,6 +966,8 @@
 <script src="assets/js/dashboard.js"></script>
 <script src="assets/js/timeline.js"></script>
 <script src="assets/js/explorer.js"></script>
+<script src="assets/js/predict.js"></script>
+<script src="assets/js/sentinel.js"></script>
 <script src="assets/js/alerts.js"></script>
 <script src="assets/js/report.js"></script>
 <script src="assets/js/chatbot.js"></script>

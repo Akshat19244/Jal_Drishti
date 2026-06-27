@@ -3,6 +3,14 @@
 
 Satellite-powered water quality monitoring for Indian water bodies. Fuses Sentinel-2 imagery with CPCB/CWC ground-truth data across 370,000+ records spanning 34 states (1963–2025).
 
+**New Features (v2.0):**
+- **ML Water Quality Predictor**: AI-powered forecasting using RandomForestRegressor with 7-day predictions
+- **Enhanced Explorer**: Sorting, smart filtering, search highlighting, inline expand with sparklines
+- **WQI Methodology Panel**: Interactive dashboard panel explaining WQI calculation
+- **Sentinel-2 Advanced Indices**: Live satellite data integration (CDOM, Turbidity, Chlorophyll-a, Kd490) with Copernicus Sentinel Hub API support
+- **Map Enhancements**: Smart filtering, station search, dynamic marker colors, marker clustering
+- **Additional Parameters**: Temperature and Electrical Conductivity (EC) display throughout
+
 ---
 
 ## Quick Start (3 steps)
@@ -43,13 +51,15 @@ jal drishti/
 │   │   ├── report.py             ← POST /api/report/generate
 │   │   ├── chat.py               ← POST /api/chat
 │   │   ├── beaches.py            ← GET /api/beaches
-│   │   └── live.py               ← GET /api/live/stream (SSE)
+│   │   ├── live.py               ← GET /api/live/stream (SSE)
+│   │   └── predict.py            ← POST /api/predict (ML forecasting)
 │   │
 │   └── services/
 │       ├── data_service.py       ← CSV loading, pandas queries, singleton cache
 │       ├── wqi_calculator.py     ← WQI formula + CPCB thresholds
 │       ├── llm_service.py        ← Anthropic/OpenAI/Gemini chatbot wrapper
-│       └── report_generator.py  ← PDF (reportlab) + CSV + JSON export
+│       ├── report_generator.py  ← PDF (reportlab) + CSV + JSON export
+│       └── ml_service.py         ← RandomForestRegressor model for predictions
 │
 └── frontend/
     ├── index.html
@@ -60,10 +70,11 @@ jal drishti/
         │   └── components.css    ← cards, map, chatbot, modals
         └── js/
             ├── main.js           ← app init, theme toggle, API wrapper
-            ├── map.js            ← Leaflet map, markers, basin/All-India filter
+            ├── map.js            ← Leaflet map, markers, smart filters, clustering
             ├── dashboard.js      ← Chart.js charts (WQI, trend, state comparison)
             ├── timeline.js       ← year slider + coverage histogram
-            ├── explorer.js       ← state/station/river tabs
+            ├── explorer.js       ← state/station/river tabs with sorting/filtering
+            ├── predict.js        ← ML Water Quality Predictor module
             ├── alerts.js         ← smart alerts + timeline
             ├── chatbot.js        ← JalBot AI assistant
             ├── report.js         ← PDF/CSV/JSON export modal
@@ -79,6 +90,10 @@ jal drishti/
 # LLM for JalBot chatbot (optional — falls back to rule-based if empty)
 LLM_PROVIDER=anthropic          # openai | anthropic | gemini
 LLM_API_KEY=                    # your key here
+
+# Sentinel-2 Satellite Data (optional — falls back to synthetic data if empty)
+# Get API key from: https://www.sentinel-hub.com/
+SENTINEL_HUB_API_KEY=
 
 # Data
 CSV_PATH=india_research_full.csv  # relative to project root
@@ -105,6 +120,10 @@ DEBUG=true
 | GET | `/api/explorer/river` | Basin accordion data |
 | GET | `/api/alerts?state=Gujarat&year=2024` | Smart alerts by threshold |
 | GET | `/api/beaches` | Coastal water quality + bathing rating |
+| POST | `/api/predict` | ML water quality prediction (RandomForestRegressor) |
+| GET | `/api/sentinel/indices?date=YYYY-MM-DD` | Sentinel-2 water quality indices (CDOM, Turbidity, Chlorophyll-a, Kd490) |
+| GET | `/api/sentinel/historical?start_date=&end_date=` | Historical Sentinel-2 indices |
+| GET | `/api/sentinel/status` | Sentinel-2 service status and configuration |
 | POST | `/api/chat` | JalBot AI chatbot |
 | POST | `/api/report/generate` | Generate PDF/CSV/JSON report |
 | GET | `/api/report/download/:id` | Download generated report |

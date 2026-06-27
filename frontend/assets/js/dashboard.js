@@ -18,6 +18,7 @@ class DashboardModule {
     this.initialized = true;
     this.createAllCharts();
     this.loadAllData();
+    this.setupWQIPanel();
     window.eventBus.on('timeline:yearChange', (data) => {
       this.currentYear = data.year;
       this.refreshChartsFromTimeline();
@@ -29,6 +30,21 @@ class DashboardModule {
       this.createAllCharts();
       this.loadAllData();
     });
+  }
+
+  setupWQIPanel() {
+    const infoBtn = document.getElementById('wqiInfoBtn');
+    const closeBtn = document.getElementById('closeWqiPanel');
+    const panel = document.getElementById('wqiMethodologyPanel');
+
+    if (infoBtn && closeBtn && panel) {
+      infoBtn.addEventListener('click', () => {
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      });
+      closeBtn.addEventListener('click', () => {
+        panel.style.display = 'none';
+      });
+    }
   }
 
   // Resolve a CSS variable to its computed value (works in both themes)
@@ -55,7 +71,7 @@ class DashboardModule {
             borderColor:     ['#16A34A',  '#65A30D',  '#D97706',  '#EA580C',  '#DC2626'],
             borderWidth: 1, borderRadius: 5, borderSkipped: false }]
         },
-        options: { responsive: true, maintainAspectRatio: true,
+        options: { responsive: true, maintainAspectRatio: false,
           plugins: { legend: { display: false } },
           scales: {
             y: { beginAtZero: true, ticks: { color: t3 }, grid: { color: grid } },
@@ -76,7 +92,7 @@ class DashboardModule {
             borderColor: '#2255CC', backgroundColor: 'rgba(34,85,204,0.12)',
             fill: true, pointBackgroundColor: '#4F7FFF', pointBorderColor: '#fff' }]
         },
-        options: { responsive: true, maintainAspectRatio: true,
+        options: { responsive: true, maintainAspectRatio: false,
           scales: { r: { beginAtZero: true,
             ticks: { color: t3, backdropColor: 'transparent', font: { size: 9 } },
             grid: { color: grid },
@@ -97,7 +113,7 @@ class DashboardModule {
           tension: 0.4, fill: true,
           pointBackgroundColor: '#2255CC', pointBorderColor: '#fff', pointRadius: 2
         }]},
-        options: { responsive: true, maintainAspectRatio: true,
+        options: { responsive: true, maintainAspectRatio: false,
           plugins: { legend: { labels: { color: t2, font: { size: 10 } } } },
           scales: {
             y: { ticks: { color: t3 }, grid: { color: grid } },
@@ -209,7 +225,7 @@ class DashboardModule {
             s.wqi > 75 ? '#DC2626' : s.wqi > 50 ? '#EA580C' : '#65A30D'),
           borderWidth: 1, borderRadius: 4 }]
       },
-      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: true,
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
           x: { beginAtZero: true, max: 100,

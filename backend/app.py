@@ -36,8 +36,10 @@ def create_app():
     from routes.chat import chat_bp
     from routes.beaches import beaches_bp
     from routes.live import live_bp
+    from routes.predict import predict_bp
+    from routes.sentinel import sentinel_bp
 
-    for bp in [timeline_bp, stations_bp, explorer_bp, alerts_bp, report_bp, chat_bp, beaches_bp, live_bp]:
+    for bp in [timeline_bp, stations_bp, explorer_bp, alerts_bp, report_bp, chat_bp, beaches_bp, live_bp, predict_bp, sentinel_bp]:
         app.register_blueprint(bp)
 
     @app.route('/api/health', methods=['GET'])

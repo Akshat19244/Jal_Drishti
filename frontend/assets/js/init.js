@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
   window.reportModule   = new ReportModule();
   window.chatbotModule  = new ChatbotModule();
   window.liveModule     = new LiveModule();
+  window.predictModule  = new PredictModule();
+  window.sentinelModule = new SentinelModule();
 
   // ── 3. Map — needs Leaflet, fires one API call ───────────────
   window.mapModule = new MapModule();
