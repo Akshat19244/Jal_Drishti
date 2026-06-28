@@ -201,8 +201,16 @@ class SentinelService:
         
         try:
             response = requests.post(self.api_url, json=payload, headers=headers, timeout=30)
-            response.raise_for_status()
-            
+            # If Sentinel Hub returns an error, capture body for debugging
+            if response.status_code >= 400:
+                try:
+                    err_body = response.json()
+                except Exception:
+                    err_body = response.text[:2000]
+
+                print(f"[Sentinel] API request failed (HTTP {response.status_code}): {err_body}")
+                return self._generate_synthetic_indices(date)
+
             if return_image:
                 # Return base64-encoded image for spatial visualization
                 import base64
@@ -215,13 +223,14 @@ class SentinelService:
                     "width": 1024,
                     "height": 1024
                 }
-            else:
-                # Process the TIFF response to extract mean values
-                return self._parse_sentinel_response(response, date)
-            
+
+            # Process the TIFF response to extract mean values
+            return self._parse_sentinel_response(response, date)
+
         except requests.RequestException as e:
-            print(f"[Sentinel] API request failed: {e}")
+            print(f"[Sentinel] API request exception: {e}")
             return self._generate_synthetic_indices(date)
+
     
     def _parse_sentinel_response(self, response, date) -> Dict:
         """Parse Sentinel Hub response to extract index values"""
