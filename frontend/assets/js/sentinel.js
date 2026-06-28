@@ -81,19 +81,40 @@ class SentinelModule {
       [data.bbox[3], data.bbox[2]]  // NE corner
     ];
 
-    const imageUrl = `data:image/tiff;base64,${data.image_data}`;
-    
-    // For now, use a placeholder since TIFF display requires additional processing
-    // In production, you'd convert TIFF to PNG or use a different format
-    this.currentLayer = L.rectangle(imageBounds, {
-      color: '#2255CC',
-      weight: 2,
-      fillColor: '#2255CC',
-      fillOpacity: 0.2
-    }).addTo(this.sentinelMap);
+    // Try to display the image overlay
+    try {
+      const imageUrl = `data:image/tiff;base64,${data.image_data}`;
+      this.currentLayer = L.imageOverlay(imageUrl, imageBounds, {
+        opacity: 0.7,
+        interactive: true
+      }).addTo(this.sentinelMap);
+    } catch (e) {
+      console.error('[Sentinel] Failed to display image overlay:', e);
+      // Fallback to rectangle with gradient
+      this.currentLayer = L.rectangle(imageBounds, {
+        color: '#2255CC',
+        weight: 2,
+        fillColor: this.getColorForIndex(),
+        fillOpacity: 0.3
+      }).addTo(this.sentinelMap);
+    }
 
     // Fit map to bounds
     this.sentinelMap.fitBounds(imageBounds);
+  }
+
+  getColorForIndex() {
+    const indexSelect = document.getElementById('sentinelIndexSelect');
+    if (!indexSelect) return '#2255CC';
+    
+    const index = indexSelect.value;
+    switch(index) {
+      case 'cdom': return '#8B5CF6'; // Purple
+      case 'turbidity': return '#F59E0B'; // Orange
+      case 'chlorophyll': return '#10B981'; // Green
+      case 'kd490': return '#3B82F6'; // Blue
+      default: return '#2255CC';
+    }
   }
 
   updateUI(data) {

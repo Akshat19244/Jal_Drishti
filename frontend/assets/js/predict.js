@@ -145,14 +145,21 @@ class PredictModule {
     setTimeout(() => {
       if (stationSelect) {
         stationSelect.value = station.name;
+        // Scroll to results if prediction already made
+        const resultsSection = document.getElementById('predictResults');
+        if (resultsSection && resultsSection.style.display !== 'none') {
+          resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       }
-    }, 500);
+    }, 800);
 
     // Highlight the selected marker
     Object.values(this.predictMarkers).forEach(m => {
       m.setStyle({ weight: 1, color: '#fff' });
     });
-    this.predictMarkers[station.name].setStyle({ weight: 3, color: '#2255CC' });
+    if (this.predictMarkers[station.name]) {
+      this.predictMarkers[station.name].setStyle({ weight: 3, color: '#2255CC' });
+    }
   }
 
   getWQIColor(wqi) {

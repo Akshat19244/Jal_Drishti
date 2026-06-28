@@ -163,6 +163,7 @@ class MapModule {
       this.markers = {};
 
       let stations = response.data || [];
+      console.log('[Map] Loaded stations:', stations.length);
 
       // Client-side water body type filter (if selected)
       if (this.currentWaterBodyType) {
@@ -173,7 +174,10 @@ class MapModule {
       if (countEl) countEl.textContent = `${stations.length.toLocaleString()} stations`;
 
       stations.forEach(station => {
-        if (!station.lat || !station.lng) return;
+        if (!station.lat || !station.lng) {
+          console.warn('[Map] Station missing coordinates:', station.name);
+          return;
+        }
         const color = this.getParameterColor(station, this.colorBy);
         const marker = L.circleMarker([station.lat, station.lng], {
           radius: 6, fillColor: color,
@@ -188,6 +192,19 @@ class MapModule {
 
       const stamp = document.getElementById('lastUpdated');
       if (stamp) stamp.textContent = `${new Date().toLocaleTimeString()} · ${stations.length.toLocaleString()} stations`;
+
+      // Force map to render markers
+      setTimeout(() => {
+        if (this.map) {
+          this.map.invalidateSize();
+          if (stations.length > 0) {
+            const bounds = this.markerGroup.getBounds();
+            if (bounds.isValid()) {
+              this.map.fitBounds(bounds, { padding: [50, 50] });
+            }
+          }
+        }
+      }, 100);
 
     } catch (error) {
       console.error('[Map] Failed to load stations:', error);

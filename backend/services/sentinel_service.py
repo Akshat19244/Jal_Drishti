@@ -197,40 +197,96 @@ class SentinelService:
     
     def _parse_sentinel_response(self, response, date) -> Dict:
         """Parse Sentinel Hub response to extract index values"""
-        # Placeholder - in production, parse TIFF and compute mean/std
-        # For now, return synthetic-like structure with real date
-        return {
-            "date": date,
-            "source": "sentinel_hub",
-            "cdom": {
-                "value": 0.45,
-                "unit": "ratio",
-                "status": "Low",
-                "min": 0.32,
-                "max": 0.58
-            },
-            "turbidity": {
-                "value": 0.62,
-                "unit": "ratio",
-                "status": "Moderate",
-                "min": 0.45,
-                "max": 0.79
-            },
-            "chlorophyll": {
-                "value": 0.38,
-                "unit": "ratio",
-                "status": "Low",
-                "min": 0.25,
-                "max": 0.51
-            },
-            "kd490": {
-                "value": 0.28,
-                "unit": "m⁻¹",
-                "status": "Good",
-                "min": 0.18,
-                "max": 0.38
-            }
-        }
+        try:
+            import rasterio
+            from io import BytesIO
+            import numpy as np
+            
+            # Parse TIFF response
+            img_data = BytesIO(response.content)
+            with rasterio.open(img_data) as src:
+                # Read bands: CDOM, Turbidity, Chlorophyll, Kd490
+                data = src.read()
+                
+                # Compute statistics for each band
+                stats = []
+                for i in range(data.shape[0]):
+                    band = data[i]
+                    # Mask NaN values
+                    valid_mask = ~np.isnan(band)
+                    valid_data = band[valid_mask]
+                    
+                    if len(valid_data) > 0:
+                        stats.append({
+                            'value': float(np.mean(valid_data)),
+                            'min': float(np.min(valid_data)),
+                            'max': float(np.max(valid_data))
+                        })
+                    else:
+                        stats.append({'value': 0.0, 'min': 0.0, 'max': 0.0})
+                
+                # Determine status based on thresholds
+                cdom_status = self._get_cdom_status(stats[0]['value'])
+                turb_status = self._get_turbidity_status(stats[1]['value'])
+                chlor_status = self._get_chlorophyll_status(stats[2]['value'])
+                kd_status = self._get_kd490_status(stats[3]['value'])
+                
+                return {
+                    "date": date,
+                    "source": "sentinel_hub",
+                    "cdom": {
+                        "value": round(stats[0]['value'], 3),
+                        "unit": "ratio",
+                        "status": cdom_status,
+                        "min": round(stats[0]['min'], 3),
+                        "max": round(stats[0]['max'], 3)
+                    },
+                    "turbidity": {
+                        "value": round(stats[1]['value'], 3),
+                        "unit": "ratio",
+                        "status": turb_status,
+                        "min": round(stats[1]['min'], 3),
+                        "max": round(stats[1]['max'], 3)
+                    },
+                    "chlorophyll": {
+                        "value": round(stats[2]['value'], 3),
+                        "unit": "ratio",
+                        "status": chlor_status,
+                        "min": round(stats[2]['min'], 3),
+                        "max": round(stats[2]['max'], 3)
+                    },
+                    "kd490": {
+                        "value": round(stats[3]['value'], 3),
+                        "unit": "m⁻¹",
+                        "status": kd_status,
+                        "min": round(stats[3]['min'], 3),
+                        "max": round(stats[3]['max'], 3)
+                    }
+                }
+        except Exception as e:
+            print(f"[Sentinel] Failed to parse TIFF response: {e}")
+            # Fallback to synthetic data
+            return self._generate_synthetic_indices(date)
+    
+    def _get_cdom_status(self, value):
+        if value < 0.3: return "Low"
+        if value < 0.6: return "Moderate"
+        return "High"
+    
+    def _get_turbidity_status(self, value):
+        if value < 0.4: return "Low"
+        if value < 0.7: return "Moderate"
+        return "High"
+    
+    def _get_chlorophyll_status(self, value):
+        if value < 0.3: return "Low"
+        if value < 0.6: return "Moderate"
+        return "High"
+    
+    def _get_kd490_status(self, value):
+        if value < 0.2: return "Good"
+        if value < 0.4: return "Moderate"
+        return "Poor"
     
     def _generate_synthetic_indices(self, date: Optional[str] = None) -> Dict:
         """Generate synthetic indices based on seasonal patterns and correlations"""
