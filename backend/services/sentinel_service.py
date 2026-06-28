@@ -195,8 +195,8 @@ class SentinelService:
                 }]
             },
             "output": {
-                "width": 400,
-                "height": 400,
+                "width": 2000,
+                "height": 2000,
 
 
                 "responses": [{
@@ -237,8 +237,8 @@ class SentinelService:
                     "image_data": image_data,
                     "image_bytes_len": len(response.content),
                     "bbox": bbox,
-                    "width": 400,
-                    "height": 400
+                    "width": 2000,
+                    "height": 2000
                 }
 
 
