@@ -233,10 +233,12 @@ class SentinelService:
                     "date": date,
                     "source": "sentinel_hub",
                     "image_data": image_data,
+                    "image_bytes_len": len(response.content),
                     "bbox": bbox,
-                    "width": 1024,
-                    "height": 1024
+                    "width": 400,
+                    "height": 400
                 }
+
 
             # Process the TIFF response to extract mean values
             return self._parse_sentinel_response(response, date)
