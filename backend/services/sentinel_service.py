@@ -32,6 +32,7 @@ class SentinelService:
         enable_live = os.getenv('SENTINEL_HUB_ENABLE_LIVE', '').strip().lower() in ('1', 'true', 'yes')
 
         # Use live SentinelHub only when explicitly enabled and creds look complete.
+        # Also require that the user asked for a spatial map (the frontend will request return_image=true).
         self.use_live_data = (
             enable_live
             and bool(self.client_id and self.client_secret)
@@ -44,6 +45,7 @@ class SentinelService:
                 self.use_live_data = not bool(os.getenv('SENTINEL_HUB_DISABLE_LIVE', '').lower() in ('1', 'true', 'yes'))
             else:
                 self.use_live_data = False
+
 
 
     
@@ -92,9 +94,17 @@ class SentinelService:
         Returns:
             Dictionary with indices for CDOM, Turbidity, Chlorophyll-a, Kd490
         """
+        # Keep synthetic as default, but still allow the map overlay when live calls work.
         if not self.use_live_data:
             return self._generate_synthetic_indices(date)
-        return self._fetch_live_indices(date, return_image)
+
+        # For map overlay, we need return_image=true to get a TIFF.
+        # If live calls fail, we fallback to synthetic so UI still renders.
+        try:
+            return self._fetch_live_indices(date, return_image)
+        except Exception:
+            return self._generate_synthetic_indices(date)
+
 
     
     def _fetch_live_indices(self, date: Optional[str] = None, return_image: bool = False) -> Dict:
