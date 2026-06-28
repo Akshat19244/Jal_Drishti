@@ -58,7 +58,8 @@ class DataService:
             gdrive_id = os.getenv("GDRIVE_FILE_ID", "")
             gdrive_id = str(gdrive_id).strip()
 
-            if gdrive_id and gdrive_id.lower() not in ("none", "null"):
+            enable_gdrive = os.getenv('ENABLE_GDRIVE_DOWNLOAD', '').strip().lower() in ('1', 'true', 'yes')
+            if enable_gdrive and gdrive_id and gdrive_id.lower() not in ("none", "null"):
                 print("[DataService] CSV not found. Downloading from Google Drive...")
                 try:
                     import gdown
@@ -68,6 +69,7 @@ class DataService:
                     raise RuntimeError(
                         f"Failed to download CSV from Google Drive (id={gdrive_id}): {dl_err}"
                     )
+
 
 
         if not os.path.exists(csv_path):
