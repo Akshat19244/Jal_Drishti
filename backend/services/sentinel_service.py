@@ -31,8 +31,8 @@ class SentinelService:
         self.client_id = os.getenv('SENTINEL_HUB_CLIENT_ID')
         self.client_secret = os.getenv('SENTINEL_HUB_CLIENT_SECRET')
         self.api_key = os.getenv('SENTINEL_HUB_API_KEY')  # Fallback for Bearer token
-        self.api_url = "https://sh.dataspace.copernicus.eu/api/v1/process"
-        self.auth_url = "https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token"
+        self.api_url = "https://services.sentinel-hub.com/api/v1/process"
+        self.auth_url = "https://services.sentinel-hub.com/oauth/token"
         self.access_token = None
         self.token_expiry = None
         # IMPORTANT: keep SentinelHub synthetic by default.
