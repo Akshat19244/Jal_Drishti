@@ -45,11 +45,9 @@ class SentinelService:
         )
 
         # Bearer-token mode also requires explicit live enable.
-        if self.api_key:
-            if enable_live and os.getenv('SENTINEL_HUB_ENABLE_BEARER', '').strip().lower() in ('1', 'true', 'yes'):
-                self.use_live_data = not bool(os.getenv('SENTINEL_HUB_DISABLE_LIVE', '').lower() in ('1', 'true', 'yes'))
-            else:
-                self.use_live_data = False
+        # Only override if Bearer mode is explicitly requested; otherwise keep OAuth path.
+        if self.api_key and enable_live and os.getenv('SENTINEL_HUB_ENABLE_BEARER', '').strip().lower() in ('1', 'true', 'yes'):
+            self.use_live_data = not bool(os.getenv('SENTINEL_HUB_DISABLE_LIVE', '').lower() in ('1', 'true', 'yes'))
 
 
 

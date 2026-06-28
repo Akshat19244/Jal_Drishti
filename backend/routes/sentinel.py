@@ -78,15 +78,19 @@ def get_sentinel_status():
     """
     Get Sentinel-2 service status and configuration
     """
-    api_key = os.getenv('SENTINEL_HUB_API_KEY')
-    use_live_data = bool(api_key)
+    from services.sentinel_service import SentinelService
+    svc = SentinelService()
     
     return jsonify({
         'success': True,
         'data': {
-            'live_data_enabled': use_live_data,
-            'api_configured': bool(api_key),
-            'api_provider': 'Copernicus Sentinel Hub' if use_live_data else 'Synthetic (CPCB correlations)',
+            'live_data_enabled': svc.use_live_data,
+            'enable_live_env': os.getenv('SENTINEL_HUB_ENABLE_LIVE', ''),
+            'client_id_set': bool(os.getenv('SENTINEL_HUB_CLIENT_ID')),
+            'client_secret_set': bool(os.getenv('SENTINEL_HUB_CLIENT_SECRET')),
+            'api_key_set': bool(os.getenv('SENTINEL_HUB_API_KEY')),
+            'bearer_mode_set': os.getenv('SENTINEL_HUB_ENABLE_BEARER', '') in ('1', 'true', 'yes'),
+            'api_provider': 'Copernicus Sentinel Hub' if svc.use_live_data else 'Synthetic (CPCB correlations)',
             'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         }
     })
