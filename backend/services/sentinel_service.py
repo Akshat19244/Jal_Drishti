@@ -27,15 +27,24 @@ class SentinelService:
         self.auth_url = "https://services.sentinel-hub.com/oauth/token"
         self.access_token = None
         self.token_expiry = None
-        # Use live SentinelHub only when creds look complete.
-        # Otherwise we fall back to synthetic data to avoid noisy 400s during deploy.
-        self.use_live_data = bool(self.client_id and self.client_secret) and not bool(os.getenv('SENTINEL_HUB_DISABLE_LIVE', '').lower() in ('1','true','yes'))
-        # Allow Bearer token mode only if explicit override is set.
+        # IMPORTANT: keep SentinelHub synthetic by default.
+        # Live calls are enabled ONLY when SENTINEL_HUB_ENABLE_LIVE=true
+        enable_live = os.getenv('SENTINEL_HUB_ENABLE_LIVE', '').strip().lower() in ('1', 'true', 'yes')
+
+        # Use live SentinelHub only when explicitly enabled and creds look complete.
+        self.use_live_data = (
+            enable_live
+            and bool(self.client_id and self.client_secret)
+            and not bool(os.getenv('SENTINEL_HUB_DISABLE_LIVE', '').lower() in ('1', 'true', 'yes'))
+        )
+
+        # Bearer-token mode also requires explicit live enable.
         if self.api_key:
-            if os.getenv('SENTINEL_HUB_ENABLE_BEARER', '').lower() in ('1','true','yes'):
-                self.use_live_data = not bool(os.getenv('SENTINEL_HUB_DISABLE_LIVE', '').lower() in ('1','true','yes'))
+            if enable_live and os.getenv('SENTINEL_HUB_ENABLE_BEARER', '').strip().lower() in ('1', 'true', 'yes'):
+                self.use_live_data = not bool(os.getenv('SENTINEL_HUB_DISABLE_LIVE', '').lower() in ('1', 'true', 'yes'))
             else:
                 self.use_live_data = False
+
 
     
     def _get_access_token(self) -> str:
