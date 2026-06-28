@@ -27,7 +27,16 @@ class SentinelService:
         self.auth_url = "https://services.sentinel-hub.com/oauth/token"
         self.access_token = None
         self.token_expiry = None
-        self.use_live_data = bool(self.client_id and self.client_secret) or bool(self.api_key)
+        # Use live SentinelHub only when creds look complete.
+        # Otherwise we fall back to synthetic data to avoid noisy 400s during deploy.
+        self.use_live_data = bool(self.client_id and self.client_secret) and not bool(os.getenv('SENTINEL_HUB_DISABLE_LIVE', '').lower() in ('1','true','yes'))
+        # Allow Bearer token mode only if explicit override is set.
+        if self.api_key:
+            if os.getenv('SENTINEL_HUB_ENABLE_BEARER', '').lower() in ('1','true','yes'):
+                self.use_live_data = not bool(os.getenv('SENTINEL_HUB_DISABLE_LIVE', '').lower() in ('1','true','yes'))
+            else:
+                self.use_live_data = False
+
     
     def _get_access_token(self) -> str:
         """Get or refresh OAuth access token"""
@@ -74,10 +83,10 @@ class SentinelService:
         Returns:
             Dictionary with indices for CDOM, Turbidity, Chlorophyll-a, Kd490
         """
-        if self.use_live_data:
-            return self._fetch_live_indices(date, return_image)
-        else:
+        if not self.use_live_data:
             return self._generate_synthetic_indices(date)
+        return self._fetch_live_indices(date, return_image)
+
     
     def _fetch_live_indices(self, date: Optional[str] = None, return_image: bool = False) -> Dict:
         """Fetch live data from Sentinel Hub API"""

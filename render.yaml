@@ -11,6 +11,7 @@ services:
       - key: DEBUG
         value: false
       - key: CSV_PATH
-        value: /tmp/india_research_full.csv
+        value: india_research_full.csv
       - key: GDRIVE_FILE_ID
-        sync: false   # Set this in the Render dashboard → Environment
+        value: ''  # Disabled by default; set only if you want fallback download
+
