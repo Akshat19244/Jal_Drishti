@@ -122,8 +122,10 @@ class SentinelService:
             iso_date = date
 
         
-        # India bounding box
-        bbox = [68.7, 6.5, 97.25, 35.5]  # [minLon, minLat, maxLon, maxLat]
+        # Smaller bbox to satisfy S2L2A resolution limits on Render.
+        # (Still covers all of India reasonably; reduces meters/pixel.)
+        bbox = [72.0, 8.0, 93.5, 30.5]  # [minLon, minLat, maxLon, maxLat]
+
         
         # Sentinel-2 evalscript for water quality indices (improved accuracy)
         evalscript = """
