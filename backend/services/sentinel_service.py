@@ -111,6 +111,16 @@ class SentinelService:
         """Fetch live data from Sentinel Hub API"""
         if not date:
             date = (datetime.now() - timedelta(days=5)).strftime('%Y-%m-%d')
+
+        # Sentinel Hub expects ISO-8601 time for timeRange.from/to.
+        # Your previous request used only YYYY-MM-DD, which caused HTTP 400.
+        # Convert YYYY-MM-DD → YYYY-MM-DDT00:00:00Z
+        if len(date) == 10 and date[4] == '-' and date[7] == '-':
+            iso_date = f"{date}T00:00:00Z"
+        else:
+            # If already ISO, keep as-is
+            iso_date = date
+
         
         # India bounding box
         bbox = [68.7, 6.5, 97.25, 35.5]  # [minLon, minLat, maxLon, maxLat]
@@ -174,7 +184,8 @@ class SentinelService:
                 "data": [{
                     "type": "sentinel-2-l2a",
                     "dataFilter": {
-                        "timeRange": {"from": date, "to": date},
+                        "timeRange": {"from": iso_date, "to": iso_date},
+
                         "mosaickingOrder": "mostRecent",
                         "maxCloudCover": 30  # Only use scenes with <30% cloud cover
                     }
