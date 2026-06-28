@@ -21,6 +21,9 @@ from PIL import Image
 from io import BytesIO
 
 
+# Shared in-memory cache for generated map PNGs (keyed by date)
+_map_png_cache: Dict[str, bytes] = {}
+
 class SentinelService:
     """Service for fetching Sentinel-2 water quality indices"""
     
@@ -235,7 +238,6 @@ class SentinelService:
                 tiff_buf = BytesIO(response.content)
                 with rasterio.open(tiff_buf) as src:
                     band = src.read(1)  # first band (CDOM)
-                    # Normalise float32 values → 0-255 uint8
                     valid = ~np.isnan(band)
                     if valid.any():
                         vmin = np.nanmin(band)
@@ -247,21 +249,19 @@ class SentinelService:
                     else:
                         norm = np.zeros(band.shape, dtype=np.uint8)
 
-                    # Simple blue→red colormap for water quality
                     r = np.clip(norm * 4, 0, 255).astype(np.uint8)
                     g = np.clip(norm * 4 - 255, 0, 255).astype(np.uint8)
                     b = np.clip(255 - norm * 4, 0, 255).astype(np.uint8)
                     rgb = np.stack([r, g, b], axis=2)
-
                     img = Image.fromarray(rgb, 'RGB')
 
                 png_buf = BytesIO()
                 img.save(png_buf, format='PNG')
-                png_b64 = base64.b64encode(png_buf.getvalue()).decode('utf-8')
+                _map_png_cache[date] = png_buf.getvalue()
                 return {
                     "date": date,
                     "source": "sentinel_hub",
-                    "image_data": png_b64,
+                    "image_url": f"/api/sentinel/map.png?date={date}",
                     "image_bytes_len": len(png_buf.getvalue()),
                     "bbox": bbox,
                     "width": 1800,
@@ -426,19 +426,15 @@ class SentinelService:
         }
 
         if return_image:
-            # Generate a synthetic gradient overlay
             bbox_syn = [72.0, 8.0, 93.5, 30.5]
             w_syn, h_syn = 400, 400
 
-            # Build coordinate grids (vectorised)
-            lat_grid = np.linspace(0, 1, h_syn, dtype=np.float32)[:, None]   # column
-            lon_grid = np.linspace(0, 1, w_syn, dtype=np.float32)[None, :]   # row
+            lat_grid = np.linspace(0, 1, h_syn, dtype=np.float32)[:, None]
+            lon_grid = np.linspace(0, 1, w_syn, dtype=np.float32)[None, :]
 
-            # Coast gradient: higher near centre of India, lower at edges
             coast = 1.0 - np.minimum(np.abs(lon_grid - 0.45), np.abs(lat_grid - 0.5)) * 1.5
             coast = np.clip(coast, 0.3, 1.0)
 
-            # Perlin-like noise via seeded random grid + PIL bilinear upscale
             seed_val = int(dt.strftime('%Y%m%d'))
             rs = np.random.RandomState(seed_val)
             noise_small = rs.uniform(0.85, 1.15, (h_syn // 8 + 1, w_syn // 8 + 1)).astype(np.float32)
@@ -457,7 +453,8 @@ class SentinelService:
             img = Image.fromarray(rgb, 'RGB')
             png_buf = BytesIO()
             img.save(png_buf, format='PNG')
-            result["image_data"] = base64.b64encode(png_buf.getvalue()).decode('utf-8')
+            _map_png_cache[date] = png_buf.getvalue()
+            result["image_url"] = f"/api/sentinel/map.png?date={date}"
             result["image_bytes_len"] = len(png_buf.getvalue())
             result["bbox"] = bbox_syn
             result["width"] = w_syn
@@ -474,6 +471,11 @@ class SentinelService:
         else:
             return "High" if "ratio" in str(low_threshold) else "Poor"
     
+    @staticmethod
+    def get_map_png(date: str) -> Optional[bytes]:
+        """Retrieve cached map PNG bytes for a given date."""
+        return _map_png_cache.get(date)
+
     def get_historical_indices(self, start_date: str, end_date: str) -> List[Dict]:
         """
         Get historical indices for a date range

@@ -38,7 +38,7 @@ class SentinelModule {
       
       const response = await app.fetch(`/api/sentinel/indices${params}`);
       
-      if (response.success && response.data && response.data.image_data) {
+      if (response.success && response.data && response.data.image_url) {
         this.displaySpatialMap(response.data);
       }
       
@@ -70,36 +70,37 @@ class SentinelModule {
   displaySpatialMap(data) {
     if (!this.sentinelMap) return;
 
-    // Remove existing layer
     if (this.currentLayer) {
       this.sentinelMap.removeLayer(this.currentLayer);
     }
 
-    // Create image overlay from base64 data
     const imageBounds = [
-      [data.bbox[1], data.bbox[0]], // SW corner
-      [data.bbox[3], data.bbox[2]]  // NE corner
+      [data.bbox[1], data.bbox[0]],
+      [data.bbox[3], data.bbox[2]]
     ];
 
-    // Try to display the image overlay
-    try {
-      const imageUrl = `data:image/png;base64,${data.image_data}`;
-      this.currentLayer = L.imageOverlay(imageUrl, imageBounds, {
-        opacity: 0.7,
-        interactive: true
-      }).addTo(this.sentinelMap);
-    } catch (e) {
-      console.error('[Sentinel] Failed to display image overlay:', e);
-      // Fallback to rectangle with gradient
+    const indexSelect = document.getElementById('sentinelIndexSelect');
+    const selectedIndex = indexSelect ? indexSelect.value : 'cdom';
+    const imageUrl = data.image_url;
+
+    const imgOverlay = L.imageOverlay(imageUrl, imageBounds, {
+      opacity: 0.7,
+      interactive: true
+    });
+
+    // Handle image load error → fallback to coloured rectangle
+    imgOverlay.on('error', () => {
+      console.warn('[Sentinel] Map image failed to load, using rectangle fallback');
+      if (this.currentLayer) this.sentinelMap.removeLayer(this.currentLayer);
       this.currentLayer = L.rectangle(imageBounds, {
-        color: '#2255CC',
+        color: this.getColorForIndex(),
         weight: 2,
         fillColor: this.getColorForIndex(),
-        fillOpacity: 0.3
+        fillOpacity: 0.4
       }).addTo(this.sentinelMap);
-    }
+    });
 
-    // Fit map to bounds
+    this.currentLayer = imgOverlay.addTo(this.sentinelMap);
     this.sentinelMap.fitBounds(imageBounds);
   }
 

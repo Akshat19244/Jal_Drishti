@@ -3,9 +3,10 @@
 API endpoints for fetching Sentinel-2 satellite water quality indices
 """
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_file
 from datetime import datetime, timedelta
 import os
+from io import BytesIO
 
 sentinel_bp = Blueprint('sentinel', __name__)
 
@@ -71,6 +72,25 @@ def get_sentinel_historical():
             'success': False,
             'error': str(e)
         }), 500
+
+
+@sentinel_bp.route('/api/sentinel/map.png', methods=['GET'])
+def sentinel_map_png():
+    """Serve the generated Sentinel map overlay as a PNG."""
+    date = request.args.get('date') or datetime.now().strftime('%Y-%m-%d')
+    from services.sentinel_service import SentinelService
+    png_bytes = SentinelService.get_map_png(date)
+    if png_bytes is None:
+        # Generate on the fly if not cached
+        try:
+            svc = SentinelService()
+            svc.get_india_indices(date, return_image=True)
+            png_bytes = SentinelService.get_map_png(date)
+        except Exception:
+            pass
+    if png_bytes:
+        return send_file(BytesIO(png_bytes), mimetype='image/png')
+    return "Map not available", 404
 
 
 @sentinel_bp.route('/api/sentinel/status', methods=['GET'])
