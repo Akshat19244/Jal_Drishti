@@ -31,20 +31,19 @@ class DataService:
 
     def _load_csv(self):
         """Load CSV with optimized dtypes. Called once on first access."""
-        # Resolve CSV path robustly (Config.CSV_PATH might be relative depending on CWD).
+        # Resolve CSV path robustly (Config.CSV_PATH may be relative).
         csv_path = Config.CSV_PATH
         tried = []
 
         candidate_paths = []
+        # Always treat Config.CSV_PATH as relative to project root if not absolute.
         if os.path.isabs(csv_path):
             candidate_paths.append(csv_path)
         else:
-            # 1) As provided (relative to current working directory)
-            candidate_paths.append(csv_path)
-            # 2) Relative to project root (backend/..)
-            candidate_paths.append(os.path.join(os.path.dirname(__file__), '..', '..', csv_path))
-            # 3) Relative to backend directory
+            project_root = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', '..'))
+            candidate_paths.append(os.path.join(project_root, csv_path))
             candidate_paths.append(os.path.join(os.path.dirname(__file__), '..', csv_path))
+
 
         for p in candidate_paths:
             # Normalize for printing
@@ -55,8 +54,11 @@ class DataService:
                 break
 
         if not os.path.exists(csv_path):
-            gdrive_id = os.getenv("GDRIVE_FILE_ID")
-            if gdrive_id:
+            # Only download from Google Drive when explicitly enabled.
+            gdrive_id = os.getenv("GDRIVE_FILE_ID", "")
+            gdrive_id = str(gdrive_id).strip()
+
+            if gdrive_id and gdrive_id.lower() not in ("none", "null"):
                 print("[DataService] CSV not found. Downloading from Google Drive...")
                 try:
                     import gdown
@@ -66,6 +68,7 @@ class DataService:
                     raise RuntimeError(
                         f"Failed to download CSV from Google Drive (id={gdrive_id}): {dl_err}"
                     )
+
 
         if not os.path.exists(csv_path):
             tried_str = "\n".join([f"  - {p}" for p in tried])
