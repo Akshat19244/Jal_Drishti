@@ -14,6 +14,11 @@ import os
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import math
+import base64
+import rasterio
+import numpy as np
+from PIL import Image
+from io import BytesIO
 
 
 class SentinelService:
@@ -229,11 +234,6 @@ class SentinelService:
 
             if return_image:
                 # Convert TIFF to PNG so the browser can render it in Leaflet
-                import base64
-                from PIL import Image
-                from io import BytesIO
-                import numpy as np
-
                 tiff_buf = BytesIO(response.content)
                 with rasterio.open(tiff_buf) as src:
                     band = src.read(1)  # first band (CDOM)
@@ -282,10 +282,6 @@ class SentinelService:
     def _parse_sentinel_response(self, response, date) -> Dict:
         """Parse Sentinel Hub response to extract index values"""
         try:
-            import rasterio
-            from io import BytesIO
-            import numpy as np
-            
             # Parse TIFF response
             img_data = BytesIO(response.content)
             with rasterio.open(img_data) as src:
