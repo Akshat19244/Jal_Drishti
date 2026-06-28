@@ -193,8 +193,9 @@ class SentinelService:
                 }]
             },
             "output": {
-                "width": 600,
-                "height": 600,
+                "width": 400,
+                "height": 400,
+
 
                 "responses": [{
                     "identifier": "default",
