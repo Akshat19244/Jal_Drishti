@@ -179,7 +179,8 @@ class SentinelService:
             "input": {
                 "bounds": {
                     "bbox": bbox,
-                    "properties": {"crs": "EPSG:4326"}
+                    "properties": {"crs": "http://www.opengis.net/def/crs/EPSG/0/4326"}
+
                 },
                 "data": [{
                     "type": "sentinel-2-l2a",
