@@ -83,7 +83,7 @@ class SentinelModule {
 
     // Try to display the image overlay
     try {
-      const imageUrl = `data:image/tiff;base64,${data.image_data}`;
+      const imageUrl = `data:image/png;base64,${data.image_data}`;
       this.currentLayer = L.imageOverlay(imageUrl, imageBounds, {
         opacity: 0.7,
         interactive: true

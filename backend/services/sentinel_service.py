@@ -228,14 +228,43 @@ class SentinelService:
                 return self._generate_synthetic_indices(date)
 
             if return_image:
-                # Return base64-encoded image for spatial visualization
+                # Convert TIFF to PNG so the browser can render it in Leaflet
                 import base64
-                image_data = base64.b64encode(response.content).decode('utf-8')
+                from PIL import Image
+                from io import BytesIO
+                import numpy as np
+
+                tiff_buf = BytesIO(response.content)
+                with rasterio.open(tiff_buf) as src:
+                    band = src.read(1)  # first band (CDOM)
+                    # Normalise float32 values → 0-255 uint8
+                    valid = ~np.isnan(band)
+                    if valid.any():
+                        vmin = np.nanmin(band)
+                        vmax = np.nanmax(band)
+                        if vmax > vmin:
+                            norm = ((band - vmin) / (vmax - vmin) * 255).clip(0, 255).astype(np.uint8)
+                        else:
+                            norm = np.zeros(band.shape, dtype=np.uint8)
+                    else:
+                        norm = np.zeros(band.shape, dtype=np.uint8)
+
+                    # Simple blue→red colormap for water quality
+                    r = np.clip(norm * 4, 0, 255).astype(np.uint8)
+                    g = np.clip(norm * 4 - 255, 0, 255).astype(np.uint8)
+                    b = np.clip(255 - norm * 4, 0, 255).astype(np.uint8)
+                    rgb = np.stack([r, g, b], axis=2)
+
+                    img = Image.fromarray(rgb, 'RGB')
+
+                png_buf = BytesIO()
+                img.save(png_buf, format='PNG')
+                png_b64 = base64.b64encode(png_buf.getvalue()).decode('utf-8')
                 return {
                     "date": date,
                     "source": "sentinel_hub",
-                    "image_data": image_data,
-                    "image_bytes_len": len(response.content),
+                    "image_data": png_b64,
+                    "image_bytes_len": len(png_buf.getvalue()),
                     "bbox": bbox,
                     "width": 2000,
                     "height": 2000
