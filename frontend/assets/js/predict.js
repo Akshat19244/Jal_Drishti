@@ -6,12 +6,15 @@ class PredictModule {
     this.stations = [];
     this.currentStation = null;
     this.forecastChart = null;
+    this.predictMap = null;
+    this.predictMarkers = {};
     this.init();
   }
 
   async init() {
     await this.loadStates();
     this.setupEventListeners();
+    this.initPredictMap();
   }
 
   async loadStates() {
@@ -68,6 +71,97 @@ class PredictModule {
     if (predictBtn) {
       predictBtn.addEventListener('click', () => this.runPrediction());
     }
+  }
+
+  initPredictMap() {
+    const mapEl = document.getElementById('predictMap');
+    if (!mapEl) return;
+
+    // Initialize Leaflet map for station selection
+    this.predictMap = L.map('predictMap').setView([20.5937, 78.9629], 5); // India center
+    
+    // Add dark tile layer
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO',
+      maxZoom: 19
+    }).addTo(this.predictMap);
+
+    // Load all stations on the map
+    this.loadPredictMapStations();
+  }
+
+  async loadPredictMapStations() {
+    try {
+      const response = await app.fetch('/api/stations?state=all');
+      if (response.success && response.data) {
+        this.renderPredictMapMarkers(response.data);
+      }
+    } catch (e) {
+      console.error('[Predict] Failed to load map stations:', e);
+    }
+  }
+
+  renderPredictMapMarkers(stations) {
+    if (!this.predictMap) return;
+
+    stations.forEach(station => {
+      if (!station.lat || !station.lng) return;
+      
+      const color = this.getWQIColor(station.wqi);
+      const marker = L.circleMarker([station.lat, station.lng], {
+        radius: 6,
+        fillColor: color,
+        color: '#fff',
+        weight: 1,
+        opacity: 0.9,
+        fillOpacity: 0.85
+      }).bindPopup(`<b>${station.name}</b><br>State: ${station.state}<br>WQI: ${station.wqi || 'N/A'}`);
+
+      marker.on('click', () => this.selectStationFromMap(station));
+      marker.addTo(this.predictMap);
+      this.predictMarkers[station.name] = marker;
+    });
+  }
+
+  selectStationFromMap(station) {
+    // Update UI to show selected station
+    const selectedInfo = document.getElementById('selectedStationInfo');
+    const mapSelectedStation = document.getElementById('mapSelectedStation');
+    
+    if (selectedInfo) selectedInfo.style.display = 'block';
+    if (mapSelectedStation) mapSelectedStation.textContent = station.name;
+
+    // Pre-fill dropdowns
+    const stateSelect = document.getElementById('predictState');
+    const stationSelect = document.getElementById('predictStation');
+
+    if (stateSelect) {
+      stateSelect.value = station.state;
+      // Trigger change to load stations
+      stateSelect.dispatchEvent(new Event('change'));
+    }
+
+    // Wait for stations to load, then select the station
+    setTimeout(() => {
+      if (stationSelect) {
+        stationSelect.value = station.name;
+      }
+    }, 500);
+
+    // Highlight the selected marker
+    Object.values(this.predictMarkers).forEach(m => {
+      m.setStyle({ weight: 1, color: '#fff' });
+    });
+    this.predictMarkers[station.name].setStyle({ weight: 3, color: '#2255CC' });
+  }
+
+  getWQIColor(wqi) {
+    if (wqi == null) return '#6B645C';
+    if (wqi <= 25)  return '#16A34A';
+    if (wqi <= 50)  return '#65A30D';
+    if (wqi <= 75)  return '#D97706';
+    if (wqi <= 90)  return '#EA580C';
+    return '#DC2626';
   }
 
   async runPrediction() {

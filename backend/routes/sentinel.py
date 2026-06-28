@@ -17,13 +17,15 @@ def get_sentinel_indices():
     
     Query params:
         date: Date in YYYY-MM-DD format (optional, defaults to most recent)
+        return_image: If 'true', returns base64-encoded image for spatial visualization
     """
     from services.sentinel_service import SentinelService
     
     try:
         date = request.args.get('date')
+        return_image = request.args.get('return_image', '').lower() == 'true'
         sentinel_service = SentinelService()
-        indices = sentinel_service.get_india_indices(date)
+        indices = sentinel_service.get_india_indices(date, return_image)
         
         return jsonify({
             'success': True,

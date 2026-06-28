@@ -3,13 +3,15 @@
 class SentinelModule {
   constructor() {
     this.currentDate = null;
-    this.chart = null;
+    this.sentinelMap = null;
+    this.currentLayer = null;
     this.init();
   }
 
   async init() {
     await this.loadSentinelData();
     this.setupEventListeners();
+    this.initSentinelMap();
   }
 
   async loadSentinelData(date = null) {
@@ -20,10 +22,78 @@ class SentinelModule {
       if (response.success && response.data) {
         this.updateUI(response.data);
         this.currentDate = response.data.date;
+        // Load spatial map data
+        await this.loadSpatialMap(date);
       }
     } catch (e) {
       console.error('[Sentinel] Failed to load data:', e);
     }
+  }
+
+  async loadSpatialMap(date = null) {
+    try {
+      const params = date ? `?date=${date}&return_image=true` : '?return_image=true';
+      const loadingEl = document.getElementById('sentinelMapLoading');
+      if (loadingEl) loadingEl.style.display = 'block';
+      
+      const response = await app.fetch(`/api/sentinel/indices${params}`);
+      
+      if (response.success && response.data && response.data.image_data) {
+        this.displaySpatialMap(response.data);
+      }
+      
+      if (loadingEl) loadingEl.style.display = 'none';
+    } catch (e) {
+      console.error('[Sentinel] Failed to load spatial map:', e);
+      const loadingEl = document.getElementById('sentinelMapLoading');
+      if (loadingEl) {
+        loadingEl.textContent = 'Spatial data unavailable (requires API key)';
+        loadingEl.style.display = 'block';
+      }
+    }
+  }
+
+  initSentinelMap() {
+    const mapEl = document.getElementById('sentinelMap');
+    if (!mapEl) return;
+
+    // Initialize Leaflet map for India
+    this.sentinelMap = L.map('sentinelMap').setView([20.5937, 78.9629], 5); // India center
+    
+    // Add dark tile layer
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO',
+      maxZoom: 19
+    }).addTo(this.sentinelMap);
+  }
+
+  displaySpatialMap(data) {
+    if (!this.sentinelMap) return;
+
+    // Remove existing layer
+    if (this.currentLayer) {
+      this.sentinelMap.removeLayer(this.currentLayer);
+    }
+
+    // Create image overlay from base64 data
+    const imageBounds = [
+      [data.bbox[1], data.bbox[0]], // SW corner
+      [data.bbox[3], data.bbox[2]]  // NE corner
+    ];
+
+    const imageUrl = `data:image/tiff;base64,${data.image_data}`;
+    
+    // For now, use a placeholder since TIFF display requires additional processing
+    // In production, you'd convert TIFF to PNG or use a different format
+    this.currentLayer = L.rectangle(imageBounds, {
+      color: '#2255CC',
+      weight: 2,
+      fillColor: '#2255CC',
+      fillOpacity: 0.2
+    }).addTo(this.sentinelMap);
+
+    // Fit map to bounds
+    this.sentinelMap.fitBounds(imageBounds);
   }
 
   updateUI(data) {
@@ -83,22 +153,9 @@ class SentinelModule {
   }
 
   updateDataSourceIndicator(source) {
-    // Add a small indicator showing data source
-    const existingIndicator = document.getElementById('sentinelDataSource');
-    if (existingIndicator) {
-      existingIndicator.remove();
-    }
-
-    const section = document.getElementById('sentinel');
-    if (section) {
-      const indicator = document.createElement('div');
-      indicator.id = 'sentinelDataSource';
-      indicator.style.cssText = 'font-family:var(--mono);font-size:.65rem;color:var(--t3);margin-top:1rem;padding:8px;background:var(--bg3);border-radius:4px;';
-      indicator.innerHTML = `
-        <strong>Data Source:</strong> ${source === 'sentinel_hub' ? 'Live Sentinel-2 (Copernicus)' : 'Synthetic (CPCB correlations)'} · 
-        <strong>Date:</strong> ${this.currentDate || 'Latest'}
-      `;
-      section.querySelector('div[style*="padding: 0 3rem"]').appendChild(indicator);
+    const indicator = document.getElementById('sentinelDataSource');
+    if (indicator) {
+      indicator.innerHTML = `${source === 'sentinel_hub' ? 'Live Sentinel-2 (Copernicus)' : 'Synthetic (CPCB correlations)'}`;
     }
   }
 
@@ -138,6 +195,15 @@ class SentinelModule {
           if (datePicker.value) {
             this.loadSentinelData(datePicker.value);
           }
+        });
+      }
+
+      // Index selector for map
+      const indexSelect = document.getElementById('sentinelIndexSelect');
+      if (indexSelect) {
+        indexSelect.addEventListener('change', () => {
+          // Reload spatial map with selected index
+          this.loadSpatialMap(this.currentDate);
         });
       }
     }
