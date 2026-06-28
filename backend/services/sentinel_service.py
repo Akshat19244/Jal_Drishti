@@ -198,8 +198,8 @@ class SentinelService:
                 }]
             },
             "output": {
-                "width": 2000,
-                "height": 2000,
+                "width": 1800,
+                "height": 1800,
 
 
                 "responses": [{
@@ -219,7 +219,7 @@ class SentinelService:
         }
         
         try:
-            response = requests.post(self.api_url, json=payload, headers=headers, timeout=30)
+            response = requests.post(self.api_url, json=payload, headers=headers, timeout=90)
             # If Sentinel Hub returns an error, capture body for debugging
             if response.status_code >= 400:
                 try:
@@ -264,8 +264,8 @@ class SentinelService:
                     "image_data": png_b64,
                     "image_bytes_len": len(png_buf.getvalue()),
                     "bbox": bbox,
-                    "width": 2000,
-                    "height": 2000
+                    "width": 1800,
+                    "height": 1800
                 }
 
 
