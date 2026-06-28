@@ -101,14 +101,14 @@ class SentinelService:
         """
         # Keep synthetic as default, but still allow the map overlay when live calls work.
         if not self.use_live_data:
-            return self._generate_synthetic_indices(date)
+            return self._generate_synthetic_indices(date, return_image)
 
         # For map overlay, we need return_image=true to get a TIFF.
         # If live calls fail, we fallback to synthetic so UI still renders.
         try:
             return self._fetch_live_indices(date, return_image)
         except Exception:
-            return self._generate_synthetic_indices(date)
+            return self._generate_synthetic_indices(date, return_image)
 
 
     
@@ -230,7 +230,7 @@ class SentinelService:
                     err_body = response.text[:2000]
 
                 print(f"[Sentinel] API request failed (HTTP {response.status_code}): {err_body}")
-                return self._generate_synthetic_indices(date)
+                return self._generate_synthetic_indices(date, return_image)
 
             if return_image:
                 # Convert TIFF to PNG so the browser can render it in Leaflet
@@ -276,7 +276,7 @@ class SentinelService:
 
         except requests.RequestException as e:
             print(f"[Sentinel] API request exception: {e}")
-            return self._generate_synthetic_indices(date)
+            return self._generate_synthetic_indices(date, return_image)
 
     
     def _parse_sentinel_response(self, response, date) -> Dict:
@@ -345,8 +345,8 @@ class SentinelService:
                 }
         except Exception as e:
             print(f"[Sentinel] Failed to parse TIFF response: {e}")
-            # Fallback to synthetic data
-            return self._generate_synthetic_indices(date)
+            # Fallback to synthetic data (no image since we're not in image mode)
+            return self._generate_synthetic_indices(date, False)
     
     def _get_cdom_status(self, value):
         if value < 0.3: return "Low"
@@ -368,7 +368,7 @@ class SentinelService:
         if value < 0.4: return "Moderate"
         return "Poor"
     
-    def _generate_synthetic_indices(self, date: Optional[str] = None) -> Dict:
+    def _generate_synthetic_indices(self, date: Optional[str] = None, return_image: bool = False) -> Dict:
         """Generate synthetic indices based on seasonal patterns and correlations"""
         if not date:
             date = datetime.now().strftime('%Y-%m-%d')
@@ -394,7 +394,7 @@ class SentinelService:
         chlorophyll = min(max(base_chlorophyll + random.uniform(-0.06, 0.06), 0.1), 0.7)
         kd490 = min(max(base_kd490 + random.uniform(-0.04, 0.04), 0.1), 0.5)
         
-        return {
+        result = {
             "date": date,
             "source": "synthetic",
             "cdom": {
@@ -426,6 +426,46 @@ class SentinelService:
                 "max": round(kd490 + 0.06, 3)
             }
         }
+
+        if return_image:
+            # Generate a synthetic gradient overlay
+            bbox_syn = [72.0, 8.0, 93.5, 30.5]
+            w_syn, h_syn = 400, 400
+
+            # Build coordinate grids (vectorised)
+            lat_grid = np.linspace(0, 1, h_syn, dtype=np.float32)[:, None]   # column
+            lon_grid = np.linspace(0, 1, w_syn, dtype=np.float32)[None, :]   # row
+
+            # Coast gradient: higher near centre of India, lower at edges
+            coast = 1.0 - np.minimum(np.abs(lon_grid - 0.45), np.abs(lat_grid - 0.5)) * 1.5
+            coast = np.clip(coast, 0.3, 1.0)
+
+            # Perlin-like noise via seeded random grid + PIL bilinear upscale
+            seed_val = int(dt.strftime('%Y%m%d'))
+            rs = np.random.RandomState(seed_val)
+            noise_small = rs.uniform(0.85, 1.15, (h_syn // 8 + 1, w_syn // 8 + 1)).astype(np.float32)
+            noise = np.array(Image.fromarray(noise_small).resize((w_syn, h_syn), Image.BILINEAR))
+
+            val = (cdom * 0.4 + turbidity * 0.3 + chlorophyll * 0.2 + kd490 * 0.1)
+            arr = val * coast * noise
+            arr = np.clip(arr, 0.0, 1.0)
+
+            norm = (arr * 255).clip(0, 255).astype(np.uint8)
+            r = np.clip(norm * 4, 0, 255).astype(np.uint8)
+            g = np.clip(norm * 4 - 255, 0, 255).astype(np.uint8)
+            b = np.clip(255 - norm * 4, 0, 255).astype(np.uint8)
+            rgb = np.stack([r, g, b], axis=2)
+
+            img = Image.fromarray(rgb, 'RGB')
+            png_buf = BytesIO()
+            img.save(png_buf, format='PNG')
+            result["image_data"] = base64.b64encode(png_buf.getvalue()).decode('utf-8')
+            result["image_bytes_len"] = len(png_buf.getvalue())
+            result["bbox"] = bbox_syn
+            result["width"] = w_syn
+            result["height"] = h_syn
+
+        return result
     
     def _get_status(self, value: float, low_threshold: float, high_threshold: float) -> str:
         """Get status label based on thresholds"""
