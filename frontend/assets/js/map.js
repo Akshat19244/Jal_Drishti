@@ -14,6 +14,7 @@ class MapModule {
     this.currentYear = null;
     this.currentBasin = null;
     this.currentWaterBodyType = null;
+    this.currentDate = null;
     this.allIndiaMode = true;
     this.colorBy = 'wqi'; // 'do', 'bod', 'ph', 'wqi', 'fcol'
     this.safetyFilter = 'all'; // 'all', 'safe', 'unsafe', 'critical'
@@ -155,7 +156,8 @@ class MapModule {
       const basinParam = this.currentBasin ? `&basin=${encodeURIComponent(this.currentBasin)}` : '';
       const stateEl    = document.getElementById('stateFilter');
       const stateParam = stateEl?.value ? `&state_filter=${encodeURIComponent(stateEl.value)}` : '';
-      const url = `/api/stations?state=all${yearParam}${basinParam}${stateParam}`;
+      const dateParam  = this.currentDate ? `&date=${this.currentDate}` : '';
+      const url = `/api/stations?state=all${yearParam}${basinParam}${stateParam}${dateParam}`;
 
       const response = await app.fetch(url);
       if (this.markerGroup) this.markerGroup.clearLayers();
@@ -296,12 +298,30 @@ class MapModule {
       });
     }
 
+    // Water body type filter
+    const waterBodyTypeSelect = document.getElementById('waterBodyTypeSelect');
+    if (waterBodyTypeSelect) {
+      waterBodyTypeSelect.addEventListener('change', (e) => {
+        this.currentWaterBodyType = e.target.value || null;
+        this.loadStations();
+      });
+    }
+
+    // Date filter
+    const dateFilter = document.getElementById('mapDateFilter');
+    if (dateFilter) {
+      dateFilter.addEventListener('change', (e) => {
+        this.currentDate = e.target.value || null;
+        this.loadStations();
+      });
+    }
+
     // Color by parameter
     const colorBySelect = document.getElementById('colorBySelect');
     if (colorBySelect) {
       colorBySelect.addEventListener('change', (e) => {
         this.colorBy = e.target.value;
-        this.updateMarkerColors();
+        this.loadStations();
       });
     }
 
@@ -318,10 +338,7 @@ class MapModule {
     const applyBtn = document.getElementById('applyMapFilters');
     if (applyBtn) {
       applyBtn.addEventListener('click', () => {
-        this.colorBy = colorBySelect.value;
-        this.safetyFilter = safetyFilterSelect.value;
-        this.updateMarkerColors();
-        this.applySafetyFilter();
+        this.loadStations();
       });
     }
 
@@ -329,14 +346,15 @@ class MapModule {
     const resetBtn = document.getElementById('resetMapFilters');
     if (resetBtn) {
       resetBtn.addEventListener('click', () => {
-        if (colorBySelect) colorBySelect.value = 'wqi';
-        if (safetyFilterSelect) safetyFilterSelect.value = 'all';
-        if (searchInput) searchInput.value = '';
+        this.currentWaterBodyType = null;
+        this.currentDate = null;
         this.colorBy = 'wqi';
         this.safetyFilter = 'all';
-        this.searchQuery = '';
-        this.updateMarkerColors();
-        this.applySafetyFilter();
+        if (waterBodyTypeSelect) waterBodyTypeSelect.value = '';
+        if (dateFilter) dateFilter.value = '';
+        if (colorBySelect) colorBySelect.value = 'wqi';
+        if (safetyFilterSelect) safetyFilterSelect.value = 'all';
+        this.loadStations();
       });
     }
   }
