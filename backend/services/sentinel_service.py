@@ -100,16 +100,11 @@ class SentinelService:
         Returns:
             Dictionary with indices for CDOM, Turbidity, Chlorophyll-a, Kd490
         """
-        # Keep synthetic as default, but still allow the map overlay when live calls work.
+        # Use live Sentinel-2 data only - no synthetic fallback
         if not self.use_live_data:
-            return self._generate_synthetic_indices(date, return_image)
-
-        # For map overlay, we need return_image=true to get a TIFF.
-        # If live calls fail, we fallback to synthetic so UI still renders.
-        try:
-            return self._fetch_live_indices(date, return_image)
-        except Exception:
-            return self._generate_synthetic_indices(date, return_image)
+            raise ValueError("Sentinel Hub credentials not configured. Please set SENTINEL_HUB_CLIENT_ID and SENTINEL_HUB_CLIENT_SECRET in environment variables.")
+        
+        return self._fetch_live_indices(date, return_image)
 
 
     
@@ -118,93 +113,73 @@ class SentinelService:
         if not date:
             date = (datetime.now() - timedelta(days=5)).strftime('%Y-%m-%d')
 
-        # Sentinel Hub expects ISO-8601 time for timeRange.from/to.
-        # Your previous request used only YYYY-MM-DD, which caused HTTP 400.
+        # Sentinel Hub expects ISO-8601 time for timeRange.from/to
         # Convert YYYY-MM-DD → YYYY-MM-DDT00:00:00Z
         if len(date) == 10 and date[4] == '-' and date[7] == '-':
             iso_date = f"{date}T00:00:00Z"
         else:
-            # If already ISO, keep as-is
             iso_date = date
 
-        
-        # Smaller bbox to satisfy S2L2A resolution limits on Render.
-        # (Still covers all of India reasonably; reduces meters/pixel.)
+        # Smaller bbox to satisfy S2L2A resolution limits
         bbox = [72.0, 8.0, 93.5, 30.5]  # [minLon, minLat, maxLon, maxLat]
 
-        
-        # Sentinel-2 evalscript for water quality indices (improved accuracy)
+        # Simplified Sentinel-2 evalscript for water quality indices
         evalscript = """
-        //VERSION=3
-        function setup() {
-          return {
-            input: ["B02", "B03", "B04", "B05", "B08", "B11", "SCL"],
-            output: { bands: 4, sampleType: 'FLOAT32' }
-          };
-        }
-        
-        function evaluatePixel(sample) {
-          // Mask clouds and water using Scene Classification Layer (SCL)
-          // SCL values: 0=NoData, 1=Saturated, 2=Dark, 3=CloudShadow, 4=Vegetation,
-          // 5=Soil, 6=Water, 7=CloudLow, 8=CloudMedium, 9=CloudHigh, 10=Cirrus, 11=Snow
-          if (sample.SCL > 3 && sample.SCL < 6) {
-            return [NaN, NaN, NaN, NaN]; // Mask non-water pixels
-          }
-          
-          // CDOM (Colored Dissolved Organic Matter) - improved formula
-          // Uses B03 (green) and B04 (red) with atmospheric correction
-          let cdom = (sample.B03 - 0.02) / (sample.B04 - 0.01);
-          cdom = cdom > 0 ? cdom : 0;
-          
-          // Turbidity - improved using red-green ratio with NIR correction
-          // Based on Nechad et al. (2010) turbidity algorithm
-          let turbidity = (sample.B04 - sample.B03) / (sample.B04 + sample.B03);
-          // Apply NIR correction for shallow waters
-          let nir = sample.B08 || sample.B11;
-          turbidity = turbidity * (1 - nir * 0.1);
-          turbidity = turbidity > 0 ? turbidity : 0;
-          
-          // Chlorophyll-a - improved using red edge bands
-          // Uses B05 (red edge) and B04 (red) with baseline correction
-          let chlorophyll = (sample.B05 - sample.B04) / (sample.B05 + sample.B04);
-          // Apply atmospheric correction baseline
-          chlorophyll = chlorophyll - 0.05;
-          chlorophyll = chlorophyll > 0 ? chlorophyll : 0;
-          
-          // Kd490 (Light Attenuation at 490nm) - improved formula
-          // Based on Lee et al. (2005) using blue-green ratio
-          let kd490 = (sample.B02 / sample.B03) * 0.5;
-          // Apply depth correction using SWIR
-          let swir = sample.B11 || 0;
-          kd490 = kd490 * (1 + swir * 0.2);
-          kd490 = kd490 > 0 ? kd490 : 0;
-          
-          return [cdom, turbidity, chlorophyll, kd490];
-        }
-        """
+//VERSION=3
+function setup() {
+  return {
+    input: ["B02", "B03", "B04", "B05", "B08", "B11", "SCL"],
+    output: { bands: 4, sampleType: 'FLOAT32' }
+  };
+}
+
+function evaluatePixel(sample) {
+  // Mask clouds and non-water using SCL
+  if (sample.SCL < 4 || sample.SCL > 6) {
+    return [NaN, NaN, NaN, NaN];
+  }
+  
+  // CDOM
+  let cdom = (sample.B03 - 0.02) / (sample.B04 - 0.01);
+  cdom = cdom > 0 ? cdom : 0;
+  
+  // Turbidity
+  let turbidity = (sample.B04 - sample.B03) / (sample.B04 + sample.B03);
+  turbidity = turbidity > 0 ? turbidity : 0;
+  
+  // Chlorophyll-a
+  let chlorophyll = (sample.B05 - sample.B04) / (sample.B05 + sample.B04);
+  chlorophyll = chlorophyll > 0 ? chlorophyll : 0;
+  
+  // Kd490
+  let kd490 = (sample.B02 / sample.B03) * 0.5;
+  kd490 = kd490 > 0 ? kd490 : 0;
+  
+  return [cdom, turbidity, chlorophyll, kd490];
+}
+"""
         
         payload = {
             "input": {
                 "bounds": {
                     "bbox": bbox,
                     "properties": {"crs": "http://www.opengis.net/def/crs/EPSG/0/4326"}
-
                 },
                 "data": [{
                     "type": "sentinel-2-l2a",
                     "dataFilter": {
-                        "timeRange": {"from": iso_date, "to": iso_date},
-
+                        "timeRange": {
+                            "from": iso_date,
+                            "to": iso_date
+                        },
                         "mosaickingOrder": "mostRecent",
-                        "maxCloudCover": 30  # Only use scenes with <30% cloud cover
+                        "maxCloudCover": 30
                     }
                 }]
             },
             "output": {
-                "width": 1800,
-                "height": 1800,
-
-
+                "width": 1200,
+                "height": 1200,
                 "responses": [{
                     "identifier": "default",
                     "format": {

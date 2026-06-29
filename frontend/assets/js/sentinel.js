@@ -24,9 +24,21 @@ class SentinelModule {
         this.currentDate = response.data.date;
         // Load spatial map data
         await this.loadSpatialMap(date);
+      } else if (response.error) {
+        this.showError(response.error);
       }
     } catch (e) {
       console.error('[Sentinel] Failed to load data:', e);
+      this.showError('Failed to load Sentinel-2 data. Check console for details.');
+    }
+  }
+
+  showError(message) {
+    const loadingEl = document.getElementById('sentinelMapLoading');
+    if (loadingEl) {
+      loadingEl.textContent = message;
+      loadingEl.style.display = 'block';
+      loadingEl.style.color = '#DC2626';
     }
   }
 
