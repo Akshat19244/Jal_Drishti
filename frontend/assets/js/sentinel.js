@@ -95,6 +95,19 @@ class SentinelModule {
     const selectedIndex = indexSelect ? indexSelect.value : 'cdom';
     const imageUrl = data.image_url;
 
+    // Check if image URL is valid
+    if (!imageUrl || imageUrl === 'data:image/tiff;base64,') {
+      console.warn('[Sentinel] Invalid image URL, using rectangle fallback');
+      this.currentLayer = L.rectangle(imageBounds, {
+        color: this.getColorForIndex(),
+        weight: 2,
+        fillColor: this.getColorForIndex(),
+        fillOpacity: 0.3
+      }).addTo(this.sentinelMap);
+      this.sentinelMap.fitBounds(imageBounds);
+      return;
+    }
+
     const imgOverlay = L.imageOverlay(imageUrl, imageBounds, {
       opacity: 0.7,
       interactive: true
@@ -108,8 +121,13 @@ class SentinelModule {
         color: this.getColorForIndex(),
         weight: 2,
         fillColor: this.getColorForIndex(),
-        fillOpacity: 0.4
+        fillOpacity: 0.3
       }).addTo(this.sentinelMap);
+    });
+
+    // Also handle load success
+    imgOverlay.on('load', () => {
+      console.log('[Sentinel] Map image loaded successfully');
     });
 
     this.currentLayer = imgOverlay.addTo(this.sentinelMap);

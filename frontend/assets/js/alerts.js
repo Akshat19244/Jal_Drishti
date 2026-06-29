@@ -37,6 +37,15 @@ class AlertsModule {
       // FIX: backend has no 'threshold_breach' field — construct it from value/threshold/unit
       const thresholdTag = `${alert.parameter}: ${alert.value} ${alert.unit || ''}`.trim();
 
+      // Format date and time
+      const dateTime = alert.date ? new Date(alert.date).toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) : 'N/A';
+
       return `
         <div class="ac ${sevClass}">
           <div style="display:flex;justify-content:space-between;align-items:flex-start">
@@ -51,6 +60,9 @@ class AlertsModule {
           <div class="ameta">
             <span>${alert.state}${alert.district ? ' · ' + alert.district : ''}</span>
             <span class="atag">${thresholdTag}</span>
+          </div>
+          <div style="margin-top:8px;font-family:var(--mono);font-size:.6rem;color:var(--t3)">
+            📅 ${dateTime}
           </div>
         </div>
       `;
@@ -74,13 +86,28 @@ class AlertsModule {
       container.innerHTML = `<div style="color:var(--t3);font-size:.75rem;padding:.5rem">No historical data available.</div>`;
       return;
     }
-    container.innerHTML = events.map(event => `
-      <div class="timeline-item">
-        <div class="timeline-date">${event.date}</div>
-        <div class="timeline-event">
-          ${event.count} readings · Avg: <b>${event.avg}</b> mg/L (Max: ${event.max})
+    container.innerHTML = events.map(event => {
+      // Format date
+      const dateStr = event.date ? new Date(event.date).toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      }) : 'N/A';
+
+      return `
+        <div class="timeline-item">
+          <div class="timeline-date">${dateStr}</div>
+          <div class="timeline-event">
+            <div style="font-weight:600;color:var(--t1)">${event.station || 'Unknown Station'}</div>
+            <div style="font-size:.7rem;color:var(--t3);margin-top:2px">
+              ${event.water_body_type || 'River'} ${event.basin ? '· ' + event.basin : ''}
+            </div>
+            <div style="margin-top:4px">
+              ${event.count} readings · Avg: <b>${event.avg}</b> ${event.unit || 'mg/L'} (Max: ${event.max})
+            </div>
+          </div>
         </div>
-      </div>
-    `).join('');
+      `;
+    }).join('');
   }
 }
