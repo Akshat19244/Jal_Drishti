@@ -559,132 +559,89 @@
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
-<!-- ML PREDICTOR                                                    -->
+<!-- DUAL-MODEL WATER QUALITY CLASSIFICATION                           -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <section id="predict-sec">
   <div style="padding: 0 3rem;">
-    <div class="section-eyebrow">AI-Powered Forecasting</div>
-    <h2 class="section-title">Water Quality Predictor</h2>
+    <div class="section-eyebrow">AI-Powered Classification</div>
+    <h2 class="section-title">Water Quality Condition Classifier</h2>
     <p style="font-size: .95rem; color: var(--t2); max-width: 600px; margin-bottom: 2rem;">
-      Predict tomorrow's water quality parameters using machine learning models trained on historical CPCB data.
+      Dual-model system using CPCB historical patterns and satellite spectral signatures to classify water quality conditions.
     </p>
 
-    <div style="display: grid; grid-template-columns: 300px 1fr; gap: 2rem; align-items: start;">
-      <!-- Prediction Controls -->
-      <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
-        <div style="font-weight: 600; font-size: .9rem; margin-bottom: 1rem; color: var(--t1);">Select Parameters</div>
-
-        <div style="margin-bottom: 1rem;">
-          <label style="display: block; font-size: .75rem; color: var(--t3); margin-bottom: .4rem;">State</label>
-          <select id="predictState" class="dsel" style="width: 100%;">
-            <option value="">Select State</option>
+    <!-- Selection Controls -->
+    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1.5rem; align-items: end;">
+        <div>
+          <label style="display: block; font-size: .75rem; color: var(--t3); margin-bottom: .4rem;">River Body</label>
+          <select id="riverBodySelect" class="dsel" style="width: 100%;">
+            <option value="">Select River Body</option>
           </select>
         </div>
-
-        <div style="margin-bottom: 1rem;">
-          <label style="display: block; font-size: .75rem; color: var(--t3); margin-bottom: .4rem;">Station</label>
-          <select id="predictStation" class="dsel" style="width: 100%;">
-            <option value="">Select Station</option>
-          </select>
-        </div>
-
-        <div style="margin-bottom: 1.5rem;">
-          <label style="display: block; font-size: .75rem; color: var(--t3); margin-bottom: .4rem;">Parameter to Predict</label>
-          <select id="predictParameter" class="dsel" style="width: 100%;">
+        <div>
+          <label style="display: block; font-size: .75rem; color: var(--t3); margin-bottom: .4rem;">Parameter</label>
+          <select id="parameterSelect" class="dsel" style="width: 100%;">
+            <option value="">Select Parameter</option>
             <option value="DO">Dissolved Oxygen (DO)</option>
             <option value="BOD">Biochemical Oxygen Demand (BOD)</option>
             <option value="pH">pH Level</option>
-            <option value="Fecal_Coliform">Fecal Coliform</option>
+            <option value="FC">Fecal Coliform</option>
             <option value="EC">Electrical Conductivity (EC)</option>
-            <option value="Temperature">Temperature</option>
+            <option value="Nitrate">Nitrate</option>
+            <option value="Turbidity">Turbidity</option>
           </select>
         </div>
+        <button id="checkConditionBtn" class="btn-solid">Check Water Body Condition</button>
+      </div>
+    </div>
 
-        <button id="predictBtn" class="btn-solid" style="width: 100%;">Predict Tomorrow's Value</button>
-        <div style="margin-top: 1rem; font-size: .7rem; color: var(--t3); text-align: center;">
-          Or select a station on the map below
+    <!-- Results Section -->
+    <div id="predictResults" style="display: none;">
+      <!-- Three Model Cards -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 1.5rem; margin-bottom: 2rem;">
+        
+        <!-- Model A Card -->
+        <div id="modelACard" style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+          <div style="font-weight: 600; font-size: .85rem; margin-bottom: 1rem; color: var(--t1);">Model A: CPCB Historical</div>
+          <div class="class-badge status-moderate" style="display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: .75rem; font-weight: 600; margin-bottom: 1rem;">-</div>
+          <div style="margin-bottom: 1rem;">
+            <div style="font-size: .7rem; color: var(--t3); margin-bottom: .3rem;">Confidence</div>
+            <div style="background: var(--bg3); border-radius: 4px; height: 8px; overflow: hidden;">
+              <div class="confidence-bar" style="width: 0%; height: 100%; background: #D97706; transition: width 0.3s;"></div>
+            </div>
+            <div class="confidence-value" style="font-family: var(--mono); font-size: .7rem; color: var(--t3); margin-top: .3rem;">-</div>
+          </div>
+          <div class="source-text" style="font-size: .7rem; color: var(--t3);">-</div>
+        </div>
+
+        <!-- Model B Card -->
+        <div id="modelBCard" style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
+          <div style="font-weight: 600; font-size: .85rem; margin-bottom: 1rem; color: var(--t1);">Model B: Satellite Spectral</div>
+          <div class="class-badge status-moderate" style="display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: .75rem; font-weight: 600; margin-bottom: 1rem;">-</div>
+          <div style="margin-bottom: 1rem;">
+            <div style="font-size: .7rem; color: var(--t3); margin-bottom: .3rem;">Confidence</div>
+            <div style="background: var(--bg3); border-radius: 4px; height: 8px; overflow: hidden;">
+              <div class="confidence-bar" style="width: 0%; height: 100%; background: #D97706; transition: width 0.3s;"></div>
+            </div>
+            <div class="confidence-value" style="font-family: var(--mono); font-size: .7rem; color: var(--t3); margin-top: .3rem;">-</div>
+          </div>
+          <div class="source-text" style="font-size: .7rem; color: var(--t3);">-</div>
+        </div>
+
+        <!-- Combined Verdict Card -->
+        <div id="combinedVerdictCard" style="background: linear-gradient(135deg, var(--card) 0%, var(--bg3) 100%); border: 2px solid var(--sap); border-radius: 12px; padding: 1.5rem;">
+          <div style="font-weight: 700; font-size: .9rem; margin-bottom: 1rem; color: var(--t1);">Combined Verdict</div>
+          <div class="verdict-badge status-moderate" style="display: inline-block; padding: 6px 16px; border-radius: 6px; font-size: .85rem; font-weight: 700; margin-bottom: 1rem;">-</div>
+          <div class="agreement-indicator" style="font-size: .75rem; color: #16A34A; margin-bottom: 1rem; font-weight: 500;">-</div>
+          <div class="combined-confidence" style="font-family: var(--mono); font-size: .75rem; color: var(--t3);">-</div>
         </div>
       </div>
 
-      <!-- Prediction Map View -->
+      <!-- Explanation Panel -->
       <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-          <div>
-            <div style="font-weight: 600; font-size: .9rem; color: var(--t1);">Station Map Selection</div>
-            <div style="font-family: var(--mono); font-size: .65rem; color: var(--t3);">Click on a station to select and predict</div>
-          </div>
-          <div id="selectedStationInfo" style="font-family: var(--mono); font-size: .7rem; color: var(--sap); display: none;">
-            Selected: <span id="mapSelectedStation">-</span>
-          </div>
-        </div>
-        <div id="predictMap" style="height: 400px; border-radius: 8px; overflow: hidden; background: var(--bg3);"></div>
-        <div style="margin-top: 1rem; display: flex; gap: 2rem; font-family: var(--mono); font-size: .7rem; color: var(--t3);">
-          <div><span style="display: inline-block; width: 12px; height: 12px; background: #16A34A; border-radius: 50%; margin-right: 4px;"></span>Safe (WQI ≥ 70)</div>
-          <div><span style="display: inline-block; width: 12px; height: 12px; background: #D97706; border-radius: 50%; margin-right: 4px;"></span>Moderate (40-70)</div>
-          <div><span style="display: inline-block; width: 12px; height: 12px; background: #DC2626; border-radius: 50%; margin-right: 4px;"></span>Unsafe (< 40)</div>
-        </div>
-      </div>
-
-      <!-- Prediction Results -->
-      <div id="predictResults" style="display: none;">
-        <!-- Prediction Card -->
-        <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; margin-bottom: 1.5rem;">
-          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1.5rem;">
-            <div>
-              <div style="font-size: .75rem; color: var(--t3); margin-bottom: .3rem;">Predicted Value for Tomorrow</div>
-              <div style="display: flex; align-items: baseline; gap: .5rem;">
-                <span id="predValue" style="font-size: 3rem; font-weight: 700; color: var(--sap);">-</span>
-                <span id="predUnit" style="font-size: 1rem; color: var(--t3);">mg/L</span>
-              </div>
-            </div>
-            <div>
-              <span id="predStatus" class="pred-badge">-</span>
-              <div id="predWQI" style="font-family: var(--mono); font-size: .85rem; color: var(--t3); margin-top: .5rem;">WQI: -</div>
-            </div>
-          </div>
-
-          <div style="font-family: var(--mono); font-size: .7rem; color: var(--t3);">
-            Station: <span id="predStation" style="color: var(--t2);">-</span> ·
-            Parameter: <span id="predParameter" style="color: var(--t2);">-</span>
-          </div>
-        </div>
-
-        <!-- 7-Day Forecast Chart -->
-        <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem;">
-          <div style="font-weight: 600; font-size: .9rem; margin-bottom: 1rem; color: var(--t1);">7-Day Forecast</div>
-          <div style="position: relative; height: 250px; width: 100%;">
-            <canvas id="forecastChart"></canvas>
-          </div>
-        </div>
-
-        <!-- Confusion Matrix & Metrics -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-          <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
-            <div style="font-weight: 600; font-size: .9rem; margin-bottom: 1rem; color: var(--t1);">Confusion Matrix</div>
-            <div id="confusionMatrix"></div>
-            <div style="font-family: var(--mono); font-size: .6rem; color: var(--t3); margin-top: .8rem;">
-              Rows: Actual Class · Columns: Predicted Class
-            </div>
-          </div>
-
-          <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
-            <div style="font-weight: 600; font-size: .9rem; margin-bottom: 1rem; color: var(--t1);">Model Performance</div>
-            <div id="modelMetrics" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: .8rem;"></div>
-          </div>
-        </div>
-
-        <!-- WQI Equation -->
-        <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-top: 1.5rem;">
-          <div style="font-weight: 600; font-size: .9rem; margin-bottom: 1rem; color: var(--t1);">WQI Calculation</div>
-          <div style="font-family: var(--mono); font-size: .85rem; color: var(--t2); margin-bottom: 1rem;">
-            WQI = Σ (W<sub>i</sub> × q<sub>i</sub>)
-          </div>
-          <div style="font-family: var(--mono); font-size: .75rem; color: var(--t3); margin-bottom: 1rem;">
-            q<sub>i</sub> = [(C<sub>i</sub> - S<sub>min</sub>) / (S<sub>max</sub> - S<sub>min</sub>)] × 100
-          </div>
-          <div style="font-size: .75rem; color: var(--t3);">
-            <strong>Weights:</strong> DO=0.31 | BOD=0.24 | pH=0.17 | Fecal Coliform=0.16 | EC=0.12
-          </div>
+        <div style="font-weight: 600; font-size: .85rem; margin-bottom: .5rem; color: var(--t1);">How This Works</div>
+        <div id="explanationPanel" style="font-size: .8rem; color: var(--t2); line-height: 1.6;">
+          Model A uses 62 years of CPCB ground station history for this river body. Model B uses Sentinel-2 satellite spectral signatures independent of ground measurements. Agreement between both increases confidence in the verdict.
         </div>
       </div>
     </div>

@@ -39,8 +39,9 @@ def create_app():
     from routes.predict import predict_bp
     from routes.sentinel import sentinel_bp
     from routes.nasa_analysis import nasa_bp
+    from routes.predict_condition import predict_condition_bp
 
-    for bp in [timeline_bp, stations_bp, explorer_bp, alerts_bp, report_bp, chat_bp, beaches_bp, live_bp, predict_bp, sentinel_bp, nasa_bp]:
+    for bp in [timeline_bp, stations_bp, explorer_bp, alerts_bp, report_bp, chat_bp, beaches_bp, live_bp, predict_bp, sentinel_bp, nasa_bp, predict_condition_bp]:
         app.register_blueprint(bp)
 
     @app.route('/api/health', methods=['GET'])

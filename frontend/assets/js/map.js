@@ -482,10 +482,10 @@ class MapModule {
       <div style="font-family:var(--mono);font-size:.55rem;color:rgba(245,240,230,.45);margin-top:6px">
         ${waterInfo} · Year: ${station.year || 'All'}
       </div>
-      <button onclick="window.predictModule.predictForStation('${station.state}', '${station.name.replace(/'/g, "\\'")}')"
+      <button onclick="window.predictModule.checkConditionForRiver('${station.basin || station.name.replace(/'/g, "\\'")}')"
         style="margin-top:8px;width:100%;font-family:var(--mono);font-size:.65rem;
         background:var(--sap);color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer">
-        Predict Tomorrow →
+        Check Water Body Condition →
       </button>
     `;
   }
