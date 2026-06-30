@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.liveModule     = new LiveModule();
   window.predictModule  = new PredictModule();
   window.sentinelModule = new SentinelModule();
+  window.nasaModule     = new NASAAnalysisModule();
 
   // ── 3. Map — needs Leaflet, fires one API call ───────────────
   window.mapModule = new MapModule();
