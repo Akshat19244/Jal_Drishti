@@ -105,6 +105,9 @@ class SentinelModule {
         fillOpacity: 0.3
       }).addTo(this.sentinelMap);
       this.sentinelMap.fitBounds(imageBounds);
+      
+      // Load NASA data points on Sentinel-2 map
+      this.loadNASADataPoints(selectedIndex);
       return;
     }
 
@@ -132,6 +135,9 @@ class SentinelModule {
 
     this.currentLayer = imgOverlay.addTo(this.sentinelMap);
     this.sentinelMap.fitBounds(imageBounds);
+    
+    // Load NASA data points on Sentinel-2 map
+    this.loadNASADataPoints(selectedIndex);
   }
 
   getColorForIndex() {
@@ -145,6 +151,20 @@ class SentinelModule {
       case 'chlorophyll': return '#10B981'; // Green
       case 'kd490': return '#3B82F6'; // Blue
       default: return '#2255CC';
+    }
+  }
+
+  loadNASADataPoints(parameter) {
+    // Load NASA data points on Sentinel-2 map
+    if (window.nasaModule && this.sentinelMap) {
+      const date = new Date().toISOString().split('T')[0];
+      const paramMap = {
+        'cdom': 'cdom',
+        'turbidity': 'turbidity',
+        'chlorophyll': 'chlorophyll',
+        'kd490': 'turbidity'
+      };
+      window.nasaModule.loadAnalysis(date, paramMap[parameter] || 'chlorophyll', this.sentinelMap);
     }
   }
 

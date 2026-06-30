@@ -260,8 +260,8 @@ function evaluatePixel(sample) {
                 }]
             },
             "output": {
-                "width": 1200,
-                "height": 1200,
+                "width": 1500,
+                "height": 1500,
                 "responses": [{
                     "identifier": "default",
                     "format": {

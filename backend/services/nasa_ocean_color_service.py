@@ -84,9 +84,10 @@ class NASAOceanColorService:
         if not products:
             raise ValueError(f"No valid parameters. Supported: {list(product_map.keys())}")
         
-        # NASA search endpoint format
+        # NASA OceanColor Web API search endpoint
+        # Correct URL format for NASA OB.DAAC
         search_url = (
-            f"{self.base_url}/ob/getfile/"
+            f"{self.base_url}/ob/search/"
             f"?sensor={self.sensor}"
             f"&dtype={self.dtype}"
             f"&products={','.join(products)}"
