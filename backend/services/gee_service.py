@@ -60,8 +60,13 @@ class GEEService:
 
         try:
             import ee
+            import json
             project = os.getenv('GEE_PROJECT', '')
-            if project:
+            service_account_key = os.getenv('GEE_SERVICE_ACCOUNT_KEY', '')
+            if service_account_key:
+                credentials = ee.ServiceAccountCredentials(None, key_data=service_account_key)
+                ee.Initialize(credentials, project=project)
+            elif project:
                 ee.Initialize(project=project)
             else:
                 ee.Initialize()
@@ -75,6 +80,7 @@ class GEEService:
             logger.warning("[GEE] 1. Create a Cloud Project: https://console.cloud.google.com/")
             logger.warning("[GEE] 2. Enable Earth Engine API")
             logger.warning("[GEE] 3. Set GEE_PROJECT=<your-project-id> in .env")
+            logger.warning("[GEE] 4. For Render: set GEE_SERVICE_ACCOUNT_KEY (JSON key string)")
             logger.warning("[GEE] Or run: earthengine set_project <your-project-id>")
 
     def is_available(self) -> bool:
