@@ -34,8 +34,8 @@ def main():
     logger.info("Starting Model Training Pipeline")
     logger.info("=" * 60)
     
-    # CSV path
-    csv_path = backend_dir / "india_research_full.csv"
+    # CSV path (in project root, one level up from backend/)
+    csv_path = backend_dir.parent / "india_research_full.csv"
     
     if not csv_path.exists():
         logger.error(f"CSV file not found: {csv_path}")
@@ -61,8 +61,9 @@ def main():
     
     try:
         model_b = ModelBSatellite()
-        # Use proxy data (set use_real_satellite=True if you have real API access)
-        model_b.train_all_models(str(csv_path), use_real_satellite=False)
+        # Uses GEE (Sentinel-2) -> NASA Ocean Color -> proxy fallback chain.
+        # earthengine authenticate required for live GEE data.
+        model_b.train_all_models(str(csv_path), use_real_satellite=True)
         logger.info("Model B training completed successfully")
     except Exception as e:
         logger.error(f"Model B training failed: {e}")

@@ -123,11 +123,11 @@ class InferenceFusion:
     def get_explanation(self, result: Dict) -> str:
         """Generate explanation text for the fusion result"""
         model_a_source = result.get('model_a', {}).get('source', 'CPCB historical patterns')
-        model_b_source = result.get('model_b', {}).get('source', 'Sentinel-2 spectral indices')
+        model_b_source = result.get('model_b', {}).get('source', 'GEE Sentinel-2 spectral indices')
         
         explanation = (
             f"Model A uses {model_a_source} for this river body. "
-            f"Model B uses {model_b_source} independent of ground measurements. "
+            f"Model B uses {model_b_source} (Google Earth Engine) independent of ground measurements. "
             f"Agreement between both increases confidence in the verdict."
         )
         

@@ -1,503 +1,218 @@
-"""Sentinel-2 Service for Water Quality Indices
+"""Satellite Water Quality Indices Service (GEE-powered)
 
-Fetches live satellite data from Copernicus Sentinel Hub API for:
-- CDOM (Colored Dissolved Organic Matter)
-- Turbidity Index
-- Chlorophyll-a
-- Kd490 (Light Attenuation at 490nm)
+Replaces the deprecated Sentinel Hub Processing API with Google Earth Engine.
+Calculates inland water quality indices at 10-20m resolution from Sentinel-2 Level-2A.
 
-Supports API key authentication or falls back to synthetic data based on CPCB correlations.
+Fallback chain:
+    1. Google Earth Engine (Sentinel-2)
+    2. NASA OceanColor (MODIS Aqua)
+    3. Synthetic data (seasonal patterns)
 """
 
-import requests
 import os
+import logging
+import numpy as np
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
-import math
-import base64
-import rasterio
-import numpy as np
-from PIL import Image
 from io import BytesIO
+from PIL import Image
+
+logger = logging.getLogger(__name__)
 
 
 # Shared in-memory cache for generated map PNGs (keyed by date)
 _map_png_cache: Dict[str, bytes] = {}
 
+
 class SentinelService:
-    """Service for fetching Sentinel-2 water quality indices"""
-    
+    """Service for fetching satellite water quality indices via GEE + fallbacks."""
+
     def __init__(self):
-        self.client_id = os.getenv('SENTINEL_HUB_CLIENT_ID')
-        self.client_secret = os.getenv('SENTINEL_HUB_CLIENT_SECRET')
-        self.api_key = os.getenv('SENTINEL_HUB_API_KEY')  # Fallback for Bearer token
-        self.api_url = "https://services.sentinel-hub.com/api/v1/process"
-        self.auth_url = "https://services.sentinel-hub.com/oauth/token"
-        self.access_token = None
-        self.token_expiry = None
-        # IMPORTANT: keep SentinelHub synthetic by default.
-        # Live calls are enabled ONLY when SENTINEL_HUB_ENABLE_LIVE=true
-        enable_live = os.getenv('SENTINEL_HUB_ENABLE_LIVE', '').strip().lower() in ('1', 'true', 'yes')
+        self.gee_available = False
+        self.gee_service = None
 
-        # Use live SentinelHub only when explicitly enabled and creds look complete.
-        # Also require that the user asked for a spatial map (the frontend will request return_image=true).
-        self.use_live_data = (
-            enable_live
-            and bool(self.client_id and self.client_secret)
-            and not bool(os.getenv('SENTINEL_HUB_DISABLE_LIVE', '').lower() in ('1', 'true', 'yes'))
-        )
-
-        # Bearer-token mode also requires explicit live enable.
-        # Only override if Bearer mode is explicitly requested; otherwise keep OAuth path.
-        if self.api_key and enable_live and os.getenv('SENTINEL_HUB_ENABLE_BEARER', '').strip().lower() in ('1', 'true', 'yes'):
-            self.use_live_data = not bool(os.getenv('SENTINEL_HUB_DISABLE_LIVE', '').lower() in ('1', 'true', 'yes'))
-
-
-
-    
-    def _get_access_token(self) -> str:
-        """Get or refresh OAuth access token"""
-        # If we have a direct API key (Bearer token), use it
-        if self.api_key:
-            return self.api_key
-        
-        # Check if token is still valid
-        if self.access_token and self.token_expiry:
-            if datetime.now() < self.token_expiry:
-                return self.access_token
-        
-        # Request new token
         try:
-            response = requests.post(
-                self.auth_url,
-                data={
-                    'client_id': self.client_id,
-                    'client_secret': self.client_secret,
-                    'grant_type': 'client_credentials'
-                },
-                timeout=30
-            )
-            response.raise_for_status()
-            
-            token_data = response.json()
-            self.access_token = token_data['access_token']
-            expires_in = token_data.get('expires_in', 3600)  # Default 1 hour
-            self.token_expiry = datetime.now() + timedelta(seconds=expires_in - 60)  # Refresh 1 min early
-            
-            return self.access_token
-        except requests.RequestException as e:
-            print(f"[Sentinel] OAuth token request failed: {e}")
-            raise
-        
+            from services.gee_service import GEEService
+            self.gee_service = GEEService()
+            self.gee_available = self.gee_service.is_available()
+        except Exception as e:
+            logger.warning(f"[Sentinel] GEE service init failed: {e}")
+
+        self.use_nasa = bool(os.getenv('NASA_APPKEY'))
+
     def get_india_indices(self, date: Optional[str] = None, return_image: bool = False) -> Dict:
+        """Get water quality indices for India.
+
+        Fallback chain: GEE → NASA → Synthetic
         """
-        Get Sentinel-2 indices for India for a specific date
-        
-        Args:
-            date: Date string in YYYY-MM-DD format (defaults to most recent available)
-            return_image: If True, returns base64-encoded image data for spatial visualization
-            
-        Returns:
-            Dictionary with indices for CDOM, Turbidity, Chlorophyll-a, Kd490
-        """
-        # Try Sentinel Hub first
-        if self.use_live_data:
+        if not date:
+            date = (datetime.now() - timedelta(days=5)).strftime('%Y-%m-%d')
+
+        bbox = [72.0, 8.0, 93.5, 30.5]  # India bbox
+
+        # 1. Try GEE (primary)
+        if self.gee_available:
             try:
-                return self._fetch_live_indices(date, return_image)
+                date_obj = datetime.strptime(date, '%Y-%m-%d')
+                start = (date_obj - timedelta(days=15)).strftime('%Y-%m-%d')
+                end = (date_obj + timedelta(days=15)).strftime('%Y-%m-%d')
+                gee_data = self.gee_service.get_water_quality_indices(bbox, start, end)
+                if gee_data:
+                    result = self._convert_gee_format(gee_data, date, 'gee')
+                    if return_image:
+                        result.update(self._generate_map_image(date, gee_data, bbox))
+                    return result
             except Exception as e:
-                print(f"[Sentinel] Sentinel Hub failed: {e}, trying Planet API as fallback")
-        
-        # Fallback to Planet API
-        try:
-            from services.planet_service import PlanetService
-            planet = PlanetService()
-            if planet.use_live_data:
-                print("[Sentinel] Using Planet API as fallback")
-                return planet.get_water_quality_indices([72.0, 8.0, 93.5, 30.5], date or datetime.now().strftime('%Y-%m-%d'))
-        except Exception as e:
-            print(f"[Sentinel] Planet API also failed: {e}, trying NASA API")
-        
-        # Fallback to NASA OceanColor API
-        try:
-            from services.nasa_ocean_color_service import NASAOceanColorService
-            nasa = NASAOceanColorService()
-            if nasa.use_live_data:
-                print("[Sentinel] Using NASA OceanColor API as fallback")
-                nasa_data = nasa.get_water_quality_indices(
-                    [72.0, 8.0, 93.5, 30.5],
-                    date or datetime.now().strftime('%Y-%m-%d'),
-                    ['chlorophyll', 'turbidity', 'cdom']
-                )
-                # Convert NASA format to our format
-                return self._convert_nasa_format(nasa_data)
-        except Exception as e:
-            print(f"[Sentinel] NASA API also failed: {e}")
-        
-        # Final fallback to synthetic data
+                logger.warning(f"[Sentinel] GEE failed: {e}, trying NASA fallback")
+
+        # 2. Try NASA OceanColor (fallback)
+        if self.use_nasa:
+            try:
+                from services.nasa_ocean_color_service import NASAOceanColorService
+                nasa = NASAOceanColorService()
+                if nasa.use_live_data and not nasa._api_broken:
+                    nasa_data = nasa.get_water_quality_indices(
+                        bbox, date, ['chlorophyll', 'turbidity', 'cdom']
+                    )
+                    result = self._convert_nasa_format(nasa_data)
+                    if return_image:
+                        gee_fallback = self._make_fallback_indices(date)
+                        result.update(self._generate_map_image(date, gee_fallback, bbox))
+                    return result
+            except Exception as e:
+                logger.warning(f"[Sentinel] NASA fallback also failed: {e}")
+
+        # 3. Final fallback: synthetic
         return self._generate_synthetic_indices(date, return_image)
-    
+
+    def _convert_gee_format(self, gee_data: Dict, date: str, source: str) -> Dict:
+        """Convert GEE format to standard output format."""
+        def get_status(param, value):
+            from services.gee_service import EXCEEDANCE_LIMITS
+            limits = EXCEEDANCE_LIMITS.get(param, {'low': 0.3, 'high': 0.6})
+            if value <= limits['low']:
+                return "Low" if param != 'kd490' else "Good"
+            elif value <= limits['high']:
+                return "Moderate"
+            else:
+                return "High" if param != 'kd490' else "Poor"
+
+        cdom_val = gee_data.get('cdom', {}).get('mean', 0.0)
+        turb_val = gee_data.get('ndti', {}).get('mean', 0.0)
+        chlor_val = gee_data.get('chlorophyll', {}).get('mean', 0.0)
+        kd_val = gee_data.get('kd490', {}).get('mean', 0.0)
+
+        return {
+            'date': date,
+            'source': source,
+            'cdom': {
+                'value': round(cdom_val, 3),
+                'unit': 'ratio',
+                'status': get_status('cdom', cdom_val),
+                'min': round(gee_data.get('cdom', {}).get('min', 0.0), 3),
+                'max': round(gee_data.get('cdom', {}).get('max', 0.0), 3)
+            },
+            'turbidity': {
+                'value': round(turb_val, 3),
+                'unit': 'ratio',
+                'status': get_status('turbidity', turb_val),
+                'min': round(gee_data.get('ndti', {}).get('min', 0.0), 3),
+                'max': round(gee_data.get('ndti', {}).get('max', 0.0), 3)
+            },
+            'chlorophyll': {
+                'value': round(chlor_val, 3),
+                'unit': 'ratio',
+                'status': get_status('chlorophyll', chlor_val),
+                'min': round(gee_data.get('chlorophyll', {}).get('min', 0.0), 3),
+                'max': round(gee_data.get('chlorophyll', {}).get('max', 0.0), 3)
+            },
+            'kd490': {
+                'value': round(kd_val, 3),
+                'unit': 'm-1',
+                'status': get_status('kd490', kd_val),
+                'min': round(gee_data.get('kd490', {}).get('min', 0.0), 3),
+                'max': round(gee_data.get('kd490', {}).get('max', 0.0), 3)
+            }
+        }
+
     def _convert_nasa_format(self, nasa_data: Dict) -> Dict:
-        """Convert NASA OceanColor format to our standard format"""
+        """Convert NASA OceanColor format to our standard format."""
         params = nasa_data.get('parameters', {})
-        
+
         def get_status(value, param):
-            if param == 'chlorophyll':
-                if value < 0.5: return "Low"
-                if value < 1.5: return "Moderate"
-                return "High"
-            elif param == 'turbidity':
-                if value < 0.1: return "Low"
-                if value < 0.3: return "Moderate"
-                return "High"
-            elif param == 'cdom':
-                if value < 0.02: return "Low"
-                if value < 0.05: return "Moderate"
-                return "High"
-            return "Moderate"
-        
+            from services.gee_service import EXCEEDANCE_LIMITS
+            limits = EXCEEDANCE_LIMITS.get(param, {'low': 0.3, 'high': 0.6})
+            if value <= limits['low']:
+                return "Low"
+            elif value <= limits['high']:
+                return "Moderate"
+            return "High"
+
+        cdom_val = params.get('cdom', {}).get('mean', 0.0)
+        turb_val = params.get('turbidity', {}).get('mean', 0.0)
+        chlor_val = params.get('chlorophyll', {}).get('mean', 0.0)
+
+        ndti_val = max(0, min(1, turb_val * 2 - 1)) if turb_val > 0 else 0.0
+
         return {
             'date': nasa_data['date'],
             'source': 'nasa_ocean_color',
             'cdom': {
-                'value': round(params.get('cdom', {}).get('mean', 0.0), 3),
-                'unit': 'm⁻¹',
-                'status': get_status(params.get('cdom', {}).get('mean', 0.0), 'cdom'),
+                'value': round(cdom_val, 3),
+                'unit': 'm-1',
+                'status': get_status(cdom_val, 'cdom'),
                 'min': round(params.get('cdom', {}).get('min', 0.0), 3),
                 'max': round(params.get('cdom', {}).get('max', 0.0), 3)
             },
             'turbidity': {
-                'value': round(params.get('turbidity', {}).get('mean', 0.0), 3),
-                'unit': 'm⁻¹',
-                'status': get_status(params.get('turbidity', {}).get('mean', 0.0), 'turbidity'),
-                'min': round(params.get('turbidity', {}).get('min', 0.0), 3),
-                'max': round(params.get('turbidity', {}).get('max', 0.0), 3)
+                'value': round(ndti_val, 3),
+                'unit': 'ratio',
+                'status': get_status(ndti_val, 'turbidity'),
+                'min': round(max(0, params.get('turbidity', {}).get('min', 0.0) * 2 - 1), 3),
+                'max': round(min(1, params.get('turbidity', {}).get('max', 0.0) * 2 - 1), 3)
             },
             'chlorophyll': {
-                'value': round(params.get('chlorophyll', {}).get('mean', 0.0), 3),
-                'unit': 'mg/m³',
-                'status': get_status(params.get('chlorophyll', {}).get('mean', 0.0), 'chlorophyll'),
+                'value': round(chlor_val, 3),
+                'unit': 'mg/m3',
+                'status': get_status(chlor_val, 'chlorophyll'),
                 'min': round(params.get('chlorophyll', {}).get('min', 0.0), 3),
                 'max': round(params.get('chlorophyll', {}).get('max', 0.0), 3)
             },
             'kd490': {
-                'value': round(params.get('turbidity', {}).get('mean', 0.0), 3),
-                'unit': 'm⁻¹',
-                'status': get_status(params.get('turbidity', {}).get('mean', 0.0), 'turbidity'),
-                'min': round(params.get('turbidity', {}).get('min', 0.0), 3),
-                'max': round(params.get('turbidity', {}).get('max', 0.0), 3)
+                'value': round(ndti_val * 0.4, 3),
+                'unit': 'm-1',
+                'status': get_status(ndti_val * 0.4, 'kd490'),
+                'min': round(max(0, params.get('turbidity', {}).get('min', 0.0) * 0.8), 3),
+                'max': round(min(1, params.get('turbidity', {}).get('max', 0.0) * 0.8), 3)
             }
         }
 
+    def _make_fallback_indices(self, date: str) -> Dict:
+        """Return zero-valued indices for map image generation."""
+        return {b: {'mean': 0.0, 'min': 0.0, 'max': 0.0, 'std': 0.0, 'count': 0}
+                for b in ['ndwi', 'ndci', 'ndti', 'cdom', 'chlorophyll', 'kd490']}
 
-    
-    def _fetch_live_indices(self, date: Optional[str] = None, return_image: bool = False) -> Dict:
-        """Fetch live data from Sentinel Hub API"""
-        if not date:
-            date = (datetime.now() - timedelta(days=5)).strftime('%Y-%m-%d')
-
-        # Sentinel Hub expects ISO-8601 time for timeRange.from/to
-        # Convert YYYY-MM-DD → YYYY-MM-DDT00:00:00Z
-        if len(date) == 10 and date[4] == '-' and date[7] == '-':
-            iso_date = f"{date}T00:00:00Z"
-        else:
-            iso_date = date
-
-        # Smaller bbox to satisfy S2L2A resolution limits
-        bbox = [72.0, 8.0, 93.5, 30.5]  # [minLon, minLat, maxLon, maxLat]
-
-        # Simplified Sentinel-2 evalscript for water quality indices
-        evalscript = """
-//VERSION=3
-function setup() {
-  return {
-    input: ["B02", "B03", "B04", "B05", "B08", "B11", "SCL"],
-    output: { bands: 4, sampleType: 'FLOAT32' }
-  };
-}
-
-function evaluatePixel(sample) {
-  // Mask clouds and non-water using SCL
-  if (sample.SCL < 4 || sample.SCL > 6) {
-    return [NaN, NaN, NaN, NaN];
-  }
-  
-  // CDOM
-  let cdom = (sample.B03 - 0.02) / (sample.B04 - 0.01);
-  cdom = cdom > 0 ? cdom : 0;
-  
-  // Turbidity
-  let turbidity = (sample.B04 - sample.B03) / (sample.B04 + sample.B03);
-  turbidity = turbidity > 0 ? turbidity : 0;
-  
-  // Chlorophyll-a
-  let chlorophyll = (sample.B05 - sample.B04) / (sample.B05 + sample.B04);
-  chlorophyll = chlorophyll > 0 ? chlorophyll : 0;
-  
-  // Kd490
-  let kd490 = (sample.B02 / sample.B03) * 0.5;
-  kd490 = kd490 > 0 ? kd490 : 0;
-  
-  return [cdom, turbidity, chlorophyll, kd490];
-}
-"""
-        
-        payload = {
-            "input": {
-                "bounds": {
-                    "bbox": bbox,
-                    "properties": {"crs": "http://www.opengis.net/def/crs/EPSG/0/4326"}
-                },
-                "data": [{
-                    "type": "sentinel-2-l2a",
-                    "dataFilter": {
-                        "timeRange": {
-                            "from": iso_date,
-                            "to": iso_date
-                        },
-                        "mosaickingOrder": "mostRecent",
-                        "maxCloudCover": 30
-                    }
-                }]
-            },
-            "output": {
-                "width": 1500,
-                "height": 1500,
-                "responses": [{
-                    "identifier": "default",
-                    "format": {
-                        "type": "image/tiff",
-                        "depth": "32f"
-                    }
-                }]
-            },
-            "evalscript": evalscript
-        }
-        
-        headers = {
-            "Authorization": f"Bearer {self._get_access_token()}",
-            "Content-Type": "application/json"
-        }
-        
+    def _generate_map_image(self, date: str, indices: Dict, bbox: List[float]) -> Dict:
+        """Generate a simple spatial visualization PNG."""
         try:
-            response = requests.post(self.api_url, json=payload, headers=headers, timeout=90)
-            # If Sentinel Hub returns an error, capture body for debugging
-            if response.status_code >= 400:
-                try:
-                    err_body = response.json()
-                except Exception:
-                    err_body = response.text[:2000]
-
-                print(f"[Sentinel] API request failed (HTTP {response.status_code}): {err_body}")
-                return self._generate_synthetic_indices(date, return_image)
-
-            if return_image:
-                # Convert TIFF to PNG so the browser can render it in Leaflet
-                tiff_buf = BytesIO(response.content)
-                with rasterio.open(tiff_buf) as src:
-                    band = src.read(1)  # first band (CDOM)
-                    valid = ~np.isnan(band)
-                    if valid.any():
-                        vmin = np.nanmin(band)
-                        vmax = np.nanmax(band)
-                        if vmax > vmin:
-                            norm = ((band - vmin) / (vmax - vmin) * 255).clip(0, 255).astype(np.uint8)
-                        else:
-                            norm = np.zeros(band.shape, dtype=np.uint8)
-                    else:
-                        norm = np.zeros(band.shape, dtype=np.uint8)
-
-                    r = np.clip(norm * 4, 0, 255).astype(np.uint8)
-                    g = np.clip(norm * 4 - 255, 0, 255).astype(np.uint8)
-                    b = np.clip(255 - norm * 4, 0, 255).astype(np.uint8)
-                    rgb = np.stack([r, g, b], axis=2)
-                    img = Image.fromarray(rgb, 'RGB')
-
-                png_buf = BytesIO()
-                img.save(png_buf, format='PNG')
-                _map_png_cache[date] = png_buf.getvalue()
-                return {
-                    "date": date,
-                    "source": "sentinel_hub",
-                    "image_url": f"/api/sentinel/map.png?date={date}",
-                    "image_bytes_len": len(png_buf.getvalue()),
-                    "bbox": bbox,
-                    "width": 1800,
-                    "height": 1800
-                }
-
-
-            # Process the TIFF response to extract mean values
-            return self._parse_sentinel_response(response, date)
-
-        except requests.RequestException as e:
-            print(f"[Sentinel] API request exception: {e}")
-            return self._generate_synthetic_indices(date, return_image)
-
-    
-    def _parse_sentinel_response(self, response, date) -> Dict:
-        """Parse Sentinel Hub response to extract index values"""
-        try:
-            # Parse TIFF response
-            img_data = BytesIO(response.content)
-            with rasterio.open(img_data) as src:
-                # Read bands: CDOM, Turbidity, Chlorophyll, Kd490
-                data = src.read()
-                
-                # Compute statistics for each band
-                stats = []
-                for i in range(data.shape[0]):
-                    band = data[i]
-                    # Mask NaN values
-                    valid_mask = ~np.isnan(band)
-                    valid_data = band[valid_mask]
-                    
-                    if len(valid_data) > 0:
-                        stats.append({
-                            'value': float(np.mean(valid_data)),
-                            'min': float(np.min(valid_data)),
-                            'max': float(np.max(valid_data))
-                        })
-                    else:
-                        stats.append({'value': 0.0, 'min': 0.0, 'max': 0.0})
-                
-                # Determine status based on thresholds
-                cdom_status = self._get_cdom_status(stats[0]['value'])
-                turb_status = self._get_turbidity_status(stats[1]['value'])
-                chlor_status = self._get_chlorophyll_status(stats[2]['value'])
-                kd_status = self._get_kd490_status(stats[3]['value'])
-                
-                return {
-                    "date": date,
-                    "source": "sentinel_hub",
-                    "cdom": {
-                        "value": round(stats[0]['value'], 3),
-                        "unit": "ratio",
-                        "status": cdom_status,
-                        "min": round(stats[0]['min'], 3),
-                        "max": round(stats[0]['max'], 3)
-                    },
-                    "turbidity": {
-                        "value": round(stats[1]['value'], 3),
-                        "unit": "ratio",
-                        "status": turb_status,
-                        "min": round(stats[1]['min'], 3),
-                        "max": round(stats[1]['max'], 3)
-                    },
-                    "chlorophyll": {
-                        "value": round(stats[2]['value'], 3),
-                        "unit": "ratio",
-                        "status": chlor_status,
-                        "min": round(stats[2]['min'], 3),
-                        "max": round(stats[2]['max'], 3)
-                    },
-                    "kd490": {
-                        "value": round(stats[3]['value'], 3),
-                        "unit": "m⁻¹",
-                        "status": kd_status,
-                        "min": round(stats[3]['min'], 3),
-                        "max": round(stats[3]['max'], 3)
-                    }
-                }
-        except Exception as e:
-            print(f"[Sentinel] Failed to parse TIFF response: {e}")
-            # Fallback to synthetic data (no image since we're not in image mode)
-            return self._generate_synthetic_indices(date, False)
-    
-    def _get_cdom_status(self, value):
-        if value < 0.3: return "Low"
-        if value < 0.6: return "Moderate"
-        return "High"
-    
-    def _get_turbidity_status(self, value):
-        if value < 0.4: return "Low"
-        if value < 0.7: return "Moderate"
-        return "High"
-    
-    def _get_chlorophyll_status(self, value):
-        if value < 0.3: return "Low"
-        if value < 0.6: return "Moderate"
-        return "High"
-    
-    def _get_kd490_status(self, value):
-        if value < 0.2: return "Good"
-        if value < 0.4: return "Moderate"
-        return "Poor"
-    
-    def _generate_synthetic_indices(self, date: Optional[str] = None, return_image: bool = False) -> Dict:
-        """Generate synthetic indices based on seasonal patterns and correlations"""
-        if not date:
-            date = datetime.now().strftime('%Y-%m-%d')
-        
-        dt = datetime.strptime(date, '%Y-%m-%d')
-        
-        # Seasonal patterns (monsoon affects water quality)
-        month = dt.month
-        is_monsoon = 6 <= month <= 9  # June-September monsoon season
-        
-        # Base values with seasonal variation
-        base_cdom = 0.35 + (0.15 if is_monsoon else 0)
-        base_turbidity = 0.50 + (0.25 if is_monsoon else 0)
-        base_chlorophyll = 0.30 + (0.10 if is_monsoon else 0)
-        base_kd490 = 0.22 + (0.10 if is_monsoon else 0)
-        
-        # Add some randomness
-        import random
-        random.seed(int(dt.strftime('%Y%m%d')))
-        
-        cdom = min(max(base_cdom + random.uniform(-0.05, 0.05), 0.1), 0.8)
-        turbidity = min(max(base_turbidity + random.uniform(-0.08, 0.08), 0.2), 0.9)
-        chlorophyll = min(max(base_chlorophyll + random.uniform(-0.06, 0.06), 0.1), 0.7)
-        kd490 = min(max(base_kd490 + random.uniform(-0.04, 0.04), 0.1), 0.5)
-        
-        result = {
-            "date": date,
-            "source": "synthetic",
-            "cdom": {
-                "value": round(cdom, 3),
-                "unit": "ratio",
-                "status": self._get_status(cdom, 0.3, 0.6),
-                "min": round(cdom - 0.1, 3),
-                "max": round(cdom + 0.1, 3)
-            },
-            "turbidity": {
-                "value": round(turbidity, 3),
-                "unit": "ratio",
-                "status": self._get_status(turbidity, 0.4, 0.7),
-                "min": round(turbidity - 0.12, 3),
-                "max": round(turbidity + 0.12, 3)
-            },
-            "chlorophyll": {
-                "value": round(chlorophyll, 3),
-                "unit": "ratio",
-                "status": self._get_status(chlorophyll, 0.3, 0.5),
-                "min": round(chlorophyll - 0.08, 3),
-                "max": round(chlorophyll + 0.08, 3)
-            },
-            "kd490": {
-                "value": round(kd490, 3),
-                "unit": "m⁻¹",
-                "status": self._get_status(kd490, 0.2, 0.4),
-                "min": round(kd490 - 0.06, 3),
-                "max": round(kd490 + 0.06, 3)
-            }
-        }
-
-        if return_image:
-            bbox_syn = [72.0, 8.0, 93.5, 30.5]
             w_syn, h_syn = 400, 400
 
             lat_grid = np.linspace(0, 1, h_syn, dtype=np.float32)[:, None]
             lon_grid = np.linspace(0, 1, w_syn, dtype=np.float32)[None, :]
-
             coast = 1.0 - np.minimum(np.abs(lon_grid - 0.45), np.abs(lat_grid - 0.5)) * 1.5
             coast = np.clip(coast, 0.3, 1.0)
 
-            seed_val = int(dt.strftime('%Y%m%d'))
+            seed_val = int(datetime.strptime(date, '%Y-%m-%d').strftime('%Y%m%d'))
             rs = np.random.RandomState(seed_val)
             noise_small = rs.uniform(0.85, 1.15, (h_syn // 8 + 1, w_syn // 8 + 1)).astype(np.float32)
             noise = np.array(Image.fromarray(noise_small).resize((w_syn, h_syn), Image.BILINEAR))
 
-            val = (cdom * 0.4 + turbidity * 0.3 + chlorophyll * 0.2 + kd490 * 0.1)
+            cdom_val = indices.get('cdom', {}).get('mean', 0.3)
+            turb_val = indices.get('ndti', {}).get('mean', 0.4)
+            chlor_val = indices.get('chlorophyll', {}).get('mean', 0.3)
+            kd_val = indices.get('kd490', {}).get('mean', 0.2)
+
+            val = (cdom_val * 0.4 + turb_val * 0.3 + chlor_val * 0.2 + kd_val * 0.1)
             arr = val * coast * noise
             arr = np.clip(arr, 0.0, 1.0)
 
@@ -511,6 +226,104 @@ function evaluatePixel(sample) {
             png_buf = BytesIO()
             img.save(png_buf, format='PNG')
             _map_png_cache[date] = png_buf.getvalue()
+
+            return {
+                "image_url": f"/api/sentinel/map.png?date={date}",
+                "image_bytes_len": len(png_buf.getvalue()),
+                "bbox": bbox,
+                "width": w_syn,
+                "height": h_syn
+            }
+        except Exception as e:
+            logger.warning(f"[Sentinel] Failed to generate map image: {e}")
+            return {}
+
+    def _generate_synthetic_indices(self, date: Optional[str] = None, return_image: bool = False) -> Dict:
+        """Generate synthetic indices based on seasonal patterns."""
+        if not date:
+            date = datetime.now().strftime('%Y-%m-%d')
+
+        dt = datetime.strptime(date, '%Y-%m-%d')
+        month = dt.month
+        is_monsoon = 6 <= month <= 9
+
+        base_cdom = 0.35 + (0.15 if is_monsoon else 0)
+        base_turbidity = 0.50 + (0.25 if is_monsoon else 0)
+        base_chlorophyll = 0.30 + (0.10 if is_monsoon else 0)
+        base_kd490 = 0.22 + (0.10 if is_monsoon else 0)
+
+        import random
+        random.seed(int(dt.strftime('%Y%m%d')))
+
+        cdom = min(max(base_cdom + random.uniform(-0.05, 0.05), 0.1), 0.8)
+        turbidity = min(max(base_turbidity + random.uniform(-0.08, 0.08), 0.2), 0.9)
+        chlorophyll = min(max(base_chlorophyll + random.uniform(-0.06, 0.06), 0.1), 0.7)
+        kd490 = min(max(base_kd490 + random.uniform(-0.04, 0.04), 0.1), 0.5)
+
+        def get_status(value, low_threshold, high_threshold):
+            if value < low_threshold:
+                return "Low"
+            elif value < high_threshold:
+                return "Moderate"
+            else:
+                return "High"
+
+        result = {
+            "date": date,
+            "source": "synthetic",
+            "cdom": {
+                "value": round(cdom, 3),
+                "unit": "ratio",
+                "status": get_status(cdom, 0.3, 0.6),
+                "min": round(cdom - 0.1, 3),
+                "max": round(cdom + 0.1, 3)
+            },
+            "turbidity": {
+                "value": round(turbidity, 3),
+                "unit": "ratio",
+                "status": get_status(turbidity, 0.4, 0.7),
+                "min": round(turbidity - 0.12, 3),
+                "max": round(turbidity + 0.12, 3)
+            },
+            "chlorophyll": {
+                "value": round(chlorophyll, 3),
+                "unit": "ratio",
+                "status": get_status(chlorophyll, 0.3, 0.5),
+                "min": round(chlorophyll - 0.08, 3),
+                "max": round(chlorophyll + 0.08, 3)
+            },
+            "kd490": {
+                "value": round(kd490, 3),
+                "unit": "m-1",
+                "status": get_status(kd490, 0.2, 0.4),
+                "min": round(kd490 - 0.06, 3),
+                "max": round(kd490 + 0.06, 3)
+            }
+        }
+
+        if return_image:
+            bbox_syn = [72.0, 8.0, 93.5, 30.5]
+            w_syn, h_syn = 400, 400
+            lat_grid = np.linspace(0, 1, h_syn, dtype=np.float32)[:, None]
+            lon_grid = np.linspace(0, 1, w_syn, dtype=np.float32)[None, :]
+            coast = 1.0 - np.minimum(np.abs(lon_grid - 0.45), np.abs(lat_grid - 0.5)) * 1.5
+            coast = np.clip(coast, 0.3, 1.0)
+            seed_val = int(dt.strftime('%Y%m%d'))
+            rs = np.random.RandomState(seed_val)
+            noise_small = rs.uniform(0.85, 1.15, (h_syn // 8 + 1, w_syn // 8 + 1)).astype(np.float32)
+            noise = np.array(Image.fromarray(noise_small).resize((w_syn, h_syn), Image.BILINEAR))
+            val = (cdom * 0.4 + turbidity * 0.3 + chlorophyll * 0.2 + kd490 * 0.1)
+            arr = val * coast * noise
+            arr = np.clip(arr, 0.0, 1.0)
+            norm = (arr * 255).clip(0, 255).astype(np.uint8)
+            r = np.clip(norm * 4, 0, 255).astype(np.uint8)
+            g = np.clip(norm * 4 - 255, 0, 255).astype(np.uint8)
+            b = np.clip(255 - norm * 4, 0, 255).astype(np.uint8)
+            rgb = np.stack([r, g, b], axis=2)
+            img = Image.fromarray(rgb, 'RGB')
+            png_buf = BytesIO()
+            img.save(png_buf, format='PNG')
+            _map_png_cache[date] = png_buf.getvalue()
             result["image_url"] = f"/api/sentinel/map.png?date={date}"
             result["image_bytes_len"] = len(png_buf.getvalue())
             result["bbox"] = bbox_syn
@@ -518,40 +331,17 @@ function evaluatePixel(sample) {
             result["height"] = h_syn
 
         return result
-    
-    def _get_status(self, value: float, low_threshold: float, high_threshold: float) -> str:
-        """Get status label based on thresholds"""
-        if value < low_threshold:
-            return "Low" if "ratio" in str(low_threshold) else "Good"
-        elif value < high_threshold:
-            return "Moderate"
-        else:
-            return "High" if "ratio" in str(low_threshold) else "Poor"
-    
+
     @staticmethod
     def get_map_png(date: str) -> Optional[bytes]:
-        """Retrieve cached map PNG bytes for a given date."""
         return _map_png_cache.get(date)
 
     def get_historical_indices(self, start_date: str, end_date: str) -> List[Dict]:
-        """
-        Get historical indices for a date range
-        
-        Args:
-            start_date: Start date in YYYY-MM-DD format
-            end_date: End date in YYYY-MM-DD format
-            
-        Returns:
-            List of index dictionaries for each date
-        """
         start = datetime.strptime(start_date, '%Y-%m-%d')
         end = datetime.strptime(end_date, '%Y-%m-%d')
-        
         indices = []
         current = start
-        
         while current <= end:
             indices.append(self.get_india_indices(current.strftime('%Y-%m-%d')))
-            current += timedelta(days=7)  # Weekly data
-        
+            current += timedelta(days=7)
         return indices

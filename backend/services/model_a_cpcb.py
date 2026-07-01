@@ -32,7 +32,9 @@ logger = logging.getLogger(__name__)
 class ModelACPCB:
     """CPCB Ground-Truth Water Quality Classifier"""
     
-    def __init__(self, model_dir: str = "backend/ml_models"):
+    def __init__(self, model_dir: str = None):
+        if model_dir is None:
+            model_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'ml_models'))
         self.model_dir = Path(model_dir)
         self.model_dir.mkdir(parents=True, exist_ok=True)
         
@@ -245,11 +247,48 @@ class ModelACPCB:
         logger.warning(f"[ModelA] No pre-trained model found for {parameter}")
         return None
     
+    def _extract_features_for_river(self, df: pd.DataFrame, river_body: str, parameter: str, 
+                                    model) -> Optional[pd.DataFrame]:
+        """Extract feature vector for a specific river body matching model's expected features"""
+        group_col = 'River_Body' if 'River_Body' in df.columns else 'Basin'
+        river_data = df[df[group_col] == river_body]
+        
+        if river_data.empty:
+            return None
+        
+        from sklearn.preprocessing import LabelEncoder
+        raw_feat = {f'{parameter}_mean': [river_data[parameter].mean()],
+                     f'{parameter}_median': [river_data[parameter].median()],
+                     f'{parameter}_std': [river_data[parameter].std()],
+                     'station_count': [river_data['Station'].nunique() if 'Station' in river_data.columns else 1],
+                     'years_of_data': [int(river_data['Year'].max() - river_data['Year'].min() + 1)]}
+        
+        if parameter == 'DO':
+            raw_feat['bod_mean'] = [river_data['BOD'].mean() if 'BOD' in river_data.columns else 0]
+            raw_feat['ph_mean'] = [river_data['pH'].mean() if 'pH' in river_data.columns else 7]
+        elif parameter == 'BOD':
+            raw_feat['do_mean'] = [river_data['DO'].mean() if 'DO' in river_data.columns else 7]
+            raw_feat['ph_mean'] = [river_data['pH'].mean() if 'pH' in river_data.columns else 7]
+        
+        wb_type = river_data['Water_Body_Type'].mode()[0] if 'Water_Body_Type' in river_data.columns else 'River'
+        for t in ['Canal', 'Lake', 'Pond', 'Reservoir', 'River', 'Stream']:
+            raw_feat[f'wb_type_{t}'] = [1 if wb_type == t else 0]
+        
+        raw_feat['state_count'] = [river_data['State'].nunique() if 'State' in river_data.columns else 1]
+        
+        raw_df = pd.DataFrame(raw_feat)
+        
+        expected_features = model.feature_names_in_
+        for feat in expected_features:
+            if feat not in raw_df.columns:
+                raw_df[feat] = 0
+        
+        return raw_df[expected_features].fillna(0)
+    
     def predict(self, river_body: str, parameter: str, df: Optional[pd.DataFrame] = None) -> Dict:
-        """Predict water quality class for a river body"""
+        """Predict water quality class for a river body using real CPCB features"""
         if parameter not in self.models:
             if df is not None:
-                # Train on the fly if data provided
                 model = self.train_model(df, parameter)
                 if model:
                     self.models[parameter] = model
@@ -262,20 +301,28 @@ class ModelACPCB:
         else:
             model = self.models[parameter]
         
-        # For now, return a synthetic prediction
-        # In production, this would extract features for the specific river body
-        import random
-        random.seed(hash(river_body + parameter))
+        if df is not None:
+            X = self._extract_features_for_river(df, river_body, parameter, model)
+            if X is not None and len(X) > 0:
+                class_probs = model.predict_proba(X)[0]
+                class_idx = np.argmax(class_probs)
+                confidence = class_probs[class_idx]
+                class_name = self.label_encoder.inverse_transform([class_idx])[0]
+                return {
+                    'class': class_name,
+                    'confidence': round(float(confidence), 3),
+                    'source': 'CPCB historical patterns',
+                    'model': 'Model A (CPCB Ground-Truth)'
+                }
         
-        class_probs = model.predict_proba([[random.random() for _ in range(10)]])[0]
+        # Fallback if feature extraction fails
+        class_probs = model.predict_proba([[0] * len(model.feature_importances_)])[0]
         class_idx = np.argmax(class_probs)
         confidence = class_probs[class_idx]
-        
         class_name = self.label_encoder.inverse_transform([class_idx])[0]
-        
         return {
             'class': class_name,
-            'confidence': round(confidence, 3),
+            'confidence': round(float(confidence), 3),
             'source': 'CPCB historical patterns',
             'model': 'Model A (CPCB Ground-Truth)'
         }

@@ -24,3 +24,9 @@ Thumbs.db
 # Reports
 reports/*.pdf
 reports/*.docx
+
+# Temp files (downloaded satellite data)
+temp/
+
+# ML model artifacts (generated at training time)
+backend/ml_models/
