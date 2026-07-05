@@ -1,0 +1,1045 @@
+{
+  "TULJE BAGH CANAL TEKRI DRAIN KAKINADA EAST GODAVARI": {
+    "CDOM": 0.9039576544148479,
+    "Turbidity_Index": -0.02328913854561889,
+    "Chlorophyll_a": 0.21648773173206676,
+    "Kd490": 0.5802435737543821,
+    "Sat_Source": "landsat"
+  },
+  "SEA WATER BAY OF BENGAL NEAR KUMBHABHISHEKAM TEMPALE KAKINADA": {
+    "CDOM": 0.9202859842486532,
+    "Turbidity_Index": -0.02498070046064231,
+    "Chlorophyll_a": 0.10668213625873074,
+    "Kd490": 0.572880121997221,
+    "Sat_Source": "landsat"
+  },
+  "SAMARLA KOTA CANAL KAKINADA EAST GODAVARI": {
+    "CDOM": 0.8695217668266754,
+    "Turbidity_Index": -0.002506709319466271,
+    "Chlorophyll_a": 0.245369534601503,
+    "Kd490": 0.5785859348588479,
+    "Sat_Source": "landsat"
+  },
+  "SEA WATER BAY OF BENGAL NEAR DEEP WATER PORT KAKINADA (1KM AWAY FROM JETTY)": {
+    "CDOM": 0.907671039280327,
+    "Turbidity_Index": -0.021297604141661066,
+    "Chlorophyll_a": 0.1438760840917904,
+    "Kd490": 0.5761467633602255,
+    "Sat_Source": "landsat"
+  },
+  "SEA WAER BAY OF BENGAL AFTER CONFLUENCE OF MARINE OUTFALL OF M/S MATRIX LABORATORIES LTD THAMMAYYAP": {
+    "CDOM": 0.9531790761185408,
+    "Turbidity_Index": -0.027993166981929874,
+    "Chlorophyll_a": 0.12842594866715845,
+    "Kd490": 0.5572576217077441,
+    "Sat_Source": "landsat"
+  },
+  "SEA WATER BAY OF BENGAL AFTER CONFLUENCE OF RIVER VASHISTA GODAVARI AT CHINNAMAINAVANILANKA (V) NAR": {
+    "CDOM": 0.9633938512747683,
+    "Turbidity_Index": -0.044612258013763235,
+    "Chlorophyll_a": 0.05175984417659394,
+    "Kd490": 0.5686641032415986,
+    "Sat_Source": "landsat"
+  },
+  "SEA WATER BAY BENGAL UPPADA BEACH ROAD KAKINADA": {
+    "CDOM": 0.9571839618610585,
+    "Turbidity_Index": -0.029002925606380396,
+    "Chlorophyll_a": 0.12171641204330425,
+    "Kd490": 0.5560710858121928,
+    "Sat_Source": "landsat"
+  },
+  "LAGOON, NEAR UPPALANKA MUDFLATS,MAHALAKSHMI NAGAR, KAKINADA": {
+    "CDOM": 0.9062693838528335,
+    "Turbidity_Index": -0.021580574595004457,
+    "Chlorophyll_a": 0.15830530827549316,
+    "Kd490": 0.5772521484494474,
+    "Sat_Source": "landsat"
+  },
+  "SEA WATER BAY OF BENGAL FISHING HARBOUR NIZAMPATNAM": {
+    "CDOM": 0.9272428835826988,
+    "Turbidity_Index": -0.03188463003851532,
+    "Chlorophyll_a": 0.08237727716309669,
+    "Kd490": 0.5767190732967699,
+    "Sat_Source": "landsat"
+  },
+  "SEA WATER BAY OF BENGAL MANGINAPUDI BEACH MACHILIPATNAM": {
+    "CDOM": 0.9247873316508879,
+    "Turbidity_Index": -0.02995591672554462,
+    "Chlorophyll_a": 0.08879715745263604,
+    "Kd490": 0.5758823229024518,
+    "Sat_Source": "landsat"
+  },
+  "UPPUTERU BEFORE CONFLUENCE WITH SEA AT CHINAGOLLAPALEM VILLAGE KRUTHIVENNU (M)": {
+    "CDOM": 0.9246452548749411,
+    "Turbidity_Index": -0.03240349074687217,
+    "Chlorophyll_a": 0.0708610714155847,
+    "Kd490": 0.5776902690437686,
+    "Sat_Source": "landsat"
+  },
+  "SEA WATER BAY OF BENGAL KRISHNAPATNAM PORT": {
+    "CDOM": 0.9235494826006987,
+    "Turbidity_Index": -0.028692115425451605,
+    "Chlorophyll_a": 0.13790878273477786,
+    "Kd490": 0.5781184702445029,
+    "Sat_Source": "landsat"
+  },
+  "SEA WATER BAY OF BENGAL VADAREVU BEACH CHIRALA": {
+    "CDOM": 0.9392898053384309,
+    "Turbidity_Index": -0.03289560531343135,
+    "Chlorophyll_a": 0.11607499386872266,
+    "Kd490": 0.5726842382139289,
+    "Sat_Source": "landsat"
+  },
+  "SEA WATER BAY OF BENGAL KOTHAPATNAM BEACH": {
+    "CDOM": 0.9593334189330618,
+    "Turbidity_Index": -0.03236813536447803,
+    "Chlorophyll_a": 0.07681750913376043,
+    "Kd490": 0.5605163820800473,
+    "Sat_Source": "landsat"
+  },
+  "SEA WATER  BAY OF BENGAL AFTER CONFLUENCE OF MARINE OUTFALL OF M/S. AUROBINDO PHARMA LTD. PYDIBHEEM": {
+    "CDOM": 1.0422804852288277,
+    "Turbidity_Index": -0.05433323451696819,
+    "Chlorophyll_a": 0.013289292737346784,
+    "Kd490": 0.5355236625601191,
+    "Sat_Source": "landsat"
+  },
+  "BEACH RD RUSHIKONDA BHEEMUNIPATNAM ANDHRA PRADESH": {
+    "CDOM": 0.9663043563176793,
+    "Turbidity_Index": -0.02893761441534602,
+    "Chlorophyll_a": 0.12650214995416686,
+    "Kd490": 0.549811954557045,
+    "Sat_Source": "landsat"
+  },
+  "U/S HARBORA RIVER WEST CHAMPARAN": {
+    "CDOM": 0.8954317638743271,
+    "Turbidity_Index": -0.002193359468905965,
+    "Chlorophyll_a": 0.16545979075695458,
+    "Kd490": 0.5611330999567001,
+    "Sat_Source": "landsat"
+  },
+  "HARBORA RIVER AT NARKATIAGANJ WEST CHAMPARAN": {
+    "CDOM": 0.8902949638894093,
+    "Turbidity_Index": -0.006976622169139023,
+    "Chlorophyll_a": 0.21257599369621213,
+    "Kd490": 0.5696517518522152,
+    "Sat_Source": "landsat"
+  },
+  "SONE AT INDRAPURI DEHRI ON SONE ROHTAS": {
+    "CDOM": 0.8537200084600008,
+    "Turbidity_Index": 0.008363113482811954,
+    "Chlorophyll_a": 0.21078011773130415,
+    "Kd490": 0.5765684920571473,
+    "Sat_Source": "landsat"
+  },
+  "MANDOVI AT TONCA MARCELA GOA": {
+    "CDOM": 0.906941091088452,
+    "Turbidity_Index": -0.01091193271937472,
+    "Chlorophyll_a": 0.24818452395945614,
+    "Kd490": 0.5639656080471139,
+    "Sat_Source": "landsat"
+  },
+  "CALANGUTE BEACH": {
+    "CDOM": 0.9481955148389906,
+    "Turbidity_Index": -0.02696829367944967,
+    "Chlorophyll_a": 0.09928746382421769,
+    "Kd490": 0.5577532101934579,
+    "Sat_Source": "landsat"
+  },
+  "MIRAMAR BEACH": {
+    "CDOM": 0.9394779544546166,
+    "Turbidity_Index": -0.02144401121998593,
+    "Chlorophyll_a": 0.11157287493259208,
+    "Kd490": 0.5565680403834968,
+    "Sat_Source": "landsat"
+  },
+  "MORJIM BEACH": {
+    "CDOM": 0.944967100097389,
+    "Turbidity_Index": -0.027748001520925564,
+    "Chlorophyll_a": 0.12342323947713865,
+    "Kd490": 0.5606872536313642,
+    "Sat_Source": "landsat"
+  },
+  "RIVER MADAI AT DABOS - VALPOI GOA": {
+    "CDOM": 0.9428077388754341,
+    "Turbidity_Index": -0.023358656143673023,
+    "Chlorophyll_a": 0.3239711156718797,
+    "Kd490": 0.5559677756276178,
+    "Sat_Source": "landsat"
+  },
+  "TIRACOL BEACH": {
+    "CDOM": 0.9568580368714764,
+    "Turbidity_Index": -0.03284397270231523,
+    "Chlorophyll_a": 0.12503069733858965,
+    "Kd490": 0.5593354553160372,
+    "Sat_Source": "landsat"
+  },
+  "RIVER ASSONORA AT ASSONORA GOA": {
+    "CDOM": 0.8965127408816845,
+    "Turbidity_Index": -0.008247342620625903,
+    "Chlorophyll_a": 0.2559070249592056,
+    "Kd490": 0.5675604017078876,
+    "Sat_Source": "landsat"
+  },
+  "RIVER KHANDEPAR AT OPA - PONDA GOA": {
+    "CDOM": 0.921634230973795,
+    "Turbidity_Index": -0.014417358793916474,
+    "Chlorophyll_a": 0.273077777742402,
+    "Kd490": 0.5588832492986165,
+    "Sat_Source": "landsat"
+  },
+  "RIVER VALVANT AT SANKLI - BICHOLIM GOA": {
+    "CDOM": 0.9125974757928226,
+    "Turbidity_Index": -0.01229629146720193,
+    "Chlorophyll_a": 0.263055130907729,
+    "Kd490": 0.5620545765306558,
+    "Sat_Source": "landsat"
+  },
+  "MANDOVI AT NEGHBOURHOOD OF PANAJI GOA": {
+    "CDOM": 0.9250796570246189,
+    "Turbidity_Index": -0.016777662531492973,
+    "Chlorophyll_a": 0.15123930204253663,
+    "Kd490": 0.5598826612601099,
+    "Sat_Source": "landsat"
+  },
+  "RIVER SINQUERIM (CANDOLIM SIDE NEAR BRIDGE)": {
+    "CDOM": 0.9441262508523339,
+    "Turbidity_Index": -0.025195450001219623,
+    "Chlorophyll_a": 0.10254304148348363,
+    "Kd490": 0.5580900135378393,
+    "Sat_Source": "landsat"
+  },
+  "VAGATOR BEACH": {
+    "CDOM": 0.9440962382901438,
+    "Turbidity_Index": -0.026899707485737164,
+    "Chlorophyll_a": 0.11850458197745564,
+    "Kd490": 0.5602596517681093,
+    "Sat_Source": "landsat"
+  },
+  "CREEK AT DANDO MOLLO VELSAO MAMUGAO": {
+    "CDOM": 0.9566918256073621,
+    "Turbidity_Index": -0.025511201973898667,
+    "Chlorophyll_a": 0.11560292438694365,
+    "Kd490": 0.5517586978861083,
+    "Sat_Source": "landsat"
+  },
+  "MOBOR BEACH": {
+    "CDOM": 0.9723702334851629,
+    "Turbidity_Index": -0.032336181111277125,
+    "Chlorophyll_a": 0.14397776514376492,
+    "Kd490": 0.5502136849200412,
+    "Sat_Source": "landsat"
+  },
+  "RIVER TALPONA AT CANACONA GOA": {
+    "CDOM": 0.9718968144614983,
+    "Turbidity_Index": -0.03159328404371487,
+    "Chlorophyll_a": 0.1944609221928513,
+    "Kd490": 0.5493333088033178,
+    "Sat_Source": "landsat"
+  },
+  "ZUARI AT D/S OF PT. WHERE KUMBARJRIA CANAL JOINS GOA": {
+    "CDOM": 0.9222730114445379,
+    "Turbidity_Index": -0.014427396408284826,
+    "Chlorophyll_a": 0.2809873858256903,
+    "Kd490": 0.5585287633292182,
+    "Sat_Source": "landsat"
+  },
+  "SALAULIM LAKE AT SALAULIM - SANGUEM GOA": {
+    "CDOM": 0.9397354175176659,
+    "Turbidity_Index": -0.019824949343586074,
+    "Chlorophyll_a": 0.30155389560007473,
+    "Kd490": 0.5540343234724839,
+    "Sat_Source": "landsat"
+  },
+  "BAINA BEACH": {
+    "CDOM": 0.9792944652062319,
+    "Turbidity_Index": -0.033215514800949815,
+    "Chlorophyll_a": 0.04894719381699192,
+    "Kd490": 0.546658943097638,
+    "Sat_Source": "landsat"
+  },
+  "COLVA BEACH": {
+    "CDOM": 0.9673775639694385,
+    "Turbidity_Index": -0.0305269691315789,
+    "Chlorophyll_a": 0.12363194524462363,
+    "Kd490": 0.5515786083427952,
+    "Sat_Source": "landsat"
+  },
+  "VELSAO BEACH": {
+    "CDOM": 0.9561369905541931,
+    "Turbidity_Index": -0.025366907891737463,
+    "Chlorophyll_a": 0.11668100900299755,
+    "Kd490": 0.5519180514316078,
+    "Sat_Source": "landsat"
+  },
+  "GALGIBAG BEACH": {
+    "CDOM": 0.9804329226091711,
+    "Turbidity_Index": -0.034139941313052265,
+    "Chlorophyll_a": 0.16332032096964172,
+    "Kd490": 0.5474313622011907,
+    "Sat_Source": "landsat"
+  },
+  "Mobor Beach_1": {
+    "CDOM": 0.9670506733475364,
+    "Turbidity_Index": -0.030774349434935233,
+    "Chlorophyll_a": 0.15722479323929348,
+    "Kd490": 0.551463116105231,
+    "Sat_Source": "landsat"
+  },
+  "NETRAVATHI AT THUMBE WATER SUPPLY STATIONS TO MANGALORE CITY": {
+    "CDOM": 0.912561647492171,
+    "Turbidity_Index": -0.019605133865993853,
+    "Chlorophyll_a": 0.315969837003754,
+    "Kd490": 0.5705927091406324,
+    "Sat_Source": "landsat"
+  },
+  "KALI AT D/S WEST COAST PAPER MILL (WCPM) ": {
+    "CDOM": 0.9289502415844879,
+    "Turbidity_Index": -0.02285239844622585,
+    "Chlorophyll_a": 0.287114687781126,
+    "Kd490": 0.5638562589358833,
+    "Sat_Source": "landsat"
+  },
+  "NARMADA RIVER AT DHARAMPURI": {
+    "CDOM": 0.8753211943833423,
+    "Turbidity_Index": 0.0007044753736811966,
+    "Chlorophyll_a": 0.2170036253399095,
+    "Kd490": 0.5708155361960493,
+    "Sat_Source": "landsat"
+  },
+  "MADHAV LAKE SHIVPURI": {
+    "CDOM": 0.8344694350438927,
+    "Turbidity_Index": 0.023968877959214846,
+    "Chlorophyll_a": 0.1985197266541435,
+    "Kd490": 0.5721195969852901,
+    "Sat_Source": "landsat"
+  },
+  "RAJADINIA PUKHURI AT ABHAYAPURI ASSAM": {
+    "CDOM": 0.9085173482102977,
+    "Turbidity_Index": -0.017031345787398854,
+    "Chlorophyll_a": 0.22266811462816213,
+    "Kd490": 0.5698844576388067,
+    "Sat_Source": "landsat"
+  },
+  "DIGHALI PUKHURI GUWAHATI ASSAM": {
+    "CDOM": 0.9100832524455714,
+    "Turbidity_Index": -0.01045807988963202,
+    "Chlorophyll_a": 0.19884673538963804,
+    "Kd490": 0.5615797223265205,
+    "Sat_Source": "landsat"
+  },
+  "Goalpara": {
+    "CDOM": 0.8975344028197704,
+    "Turbidity_Index": -0.012645016038170795,
+    "Chlorophyll_a": 0.1671754031492222,
+    "Kd490": 0.5718689351879702,
+    "Sat_Source": "landsat"
+  },
+  "PANVEL CREEK AT KOPRA BRIDGE KOPRA PANVEL RAIGAD": {
+    "CDOM": 0.8979746678756871,
+    "Turbidity_Index": 0.0019150798643685508,
+    "Chlorophyll_a": 0.13854537470371078,
+    "Kd490": 0.5551206223179971,
+    "Sat_Source": "landsat"
+  },
+  "THANE CREEK AT ELEPHANTA ISLAND ELEPHANTA MUMBAI": {
+    "CDOM": 0.9256260600699677,
+    "Turbidity_Index": -0.007110961624844603,
+    "Chlorophyll_a": 0.03861282930014982,
+    "Kd490": 0.5484076378403872,
+    "Sat_Source": "landsat"
+  },
+  "AT DAMAN JETTY MOTI DAMAN": {
+    "CDOM": 0.8693612994687442,
+    "Turbidity_Index": 0.0016014871965236927,
+    "Chlorophyll_a": 0.05995689176577993,
+    "Kd490": 0.5742975615087689,
+    "Sat_Source": "landsat"
+  },
+  "AT ZARI CAUSE WAY BRIDGE DAMAN": {
+    "CDOM": 0.8801792949312821,
+    "Turbidity_Index": 0.0026091569068655883,
+    "Chlorophyll_a": 0.14794361667978756,
+    "Kd490": 0.5658661678368943,
+    "Sat_Source": "landsat"
+  },
+  "DAMANGANGA AT KACHIGAON D\\S (DAMAN)": {
+    "CDOM": 0.880853718417076,
+    "Turbidity_Index": 0.002653235061593015,
+    "Chlorophyll_a": 0.1547961961876439,
+    "Kd490": 0.5653542454635494,
+    "Sat_Source": "landsat"
+  },
+  "DAMANGANGA AT ZERI CAUSEWAY (UT OF DAMAN)": {
+    "CDOM": 0.8805019094608509,
+    "Turbidity_Index": 0.0026176256436885015,
+    "Chlorophyll_a": 0.15104629641749545,
+    "Kd490": 0.5656368232636813,
+    "Sat_Source": "landsat"
+  },
+  "AMLAKHADI CREEK AT PUNGAM.": {
+    "CDOM": 0.8726070502408951,
+    "Turbidity_Index": 0.007251365307010643,
+    "Chlorophyll_a": 0.1845556067945066,
+    "Kd490": 0.565092540743247,
+    "Sat_Source": "landsat"
+  },
+  "DAMANGANGA AT D/S OF MADHUBAN DAMAN": {
+    "CDOM": 0.8691668392067353,
+    "Turbidity_Index": 0.001522268590867239,
+    "Chlorophyll_a": 0.05778613096042553,
+    "Kd490": 0.5745164091144064,
+    "Sat_Source": "landsat"
+  },
+  "DISCHARGE POINT OF DISTILLERY DAMAN": {
+    "CDOM": 0.8767426939474091,
+    "Turbidity_Index": 0.002256859849026784,
+    "Chlorophyll_a": 0.11692216037635444,
+    "Kd490": 0.5685991111501166,
+    "Sat_Source": "landsat"
+  },
+  "TRIVENI SANGAM NR. SOMNATH TEMPLE VERAVAL DIST. JUNAGADH.": {
+    "CDOM": 0.9405672868147607,
+    "Turbidity_Index": -0.01999487449949748,
+    "Chlorophyll_a": 0.11701533699680745,
+    "Kd490": 0.5554171376843134,
+    "Sat_Source": "landsat"
+  },
+  "DAMANGANGA AT KACHIGAON U\\S AT GIDC WIER": {
+    "CDOM": 0.8806632780037646,
+    "Turbidity_Index": 0.003066010151331115,
+    "Chlorophyll_a": 0.16152825223633363,
+    "Kd490": 0.5649722599712148,
+    "Sat_Source": "landsat"
+  },
+  "VAPI WEIR VAPI DAMAN": {
+    "CDOM": 0.8843513711576431,
+    "Turbidity_Index": 0.0025604052159250443,
+    "Chlorophyll_a": 0.1871592220891536,
+    "Kd490": 0.5630217936688855,
+    "Sat_Source": "landsat"
+  },
+  "DAMANGANGA AT D/S OF GIDC WEIR VAPI": {
+    "CDOM": 0.8844490399413378,
+    "Turbidity_Index": 0.0026288038716969766,
+    "Chlorophyll_a": 0.19022464312946785,
+    "Kd490": 0.5628628115006268,
+    "Sat_Source": "landsat"
+  },
+  "ALAPPUZHA KERALA": {
+    "CDOM": 0.9625235490479286,
+    "Turbidity_Index": -0.035387433585538815,
+    "Chlorophyll_a": 0.15028425008307797,
+    "Kd490": 0.5587585507659534,
+    "Sat_Source": "landsat"
+  },
+  "LAKE VEMBANAD AT PATHIRAMANAL (ALAPPUZHA)": {
+    "CDOM": 0.9507379639774838,
+    "Turbidity_Index": -0.032242819988328925,
+    "Chlorophyll_a": 0.20728531507903725,
+    "Kd490": 0.5615766460476901,
+    "Sat_Source": "landsat"
+  },
+  "VEMBANAD LAKEKOCHI (OIL TANKER JETTY) KERALA": {
+    "CDOM": 0.967823158665586,
+    "Turbidity_Index": -0.03279386117485782,
+    "Chlorophyll_a": 0.11294963449187516,
+    "Kd490": 0.5529073017367085,
+    "Sat_Source": "landsat"
+  },
+  "R KADAMBAYAR AT BRAHMAPURAM": {
+    "CDOM": 0.9122067793563384,
+    "Turbidity_Index": -0.022182881135988368,
+    "Chlorophyll_a": 0.2837256849752602,
+    "Kd490": 0.57400408068639,
+    "Sat_Source": "landsat"
+  },
+  "R KADAMBAYAR AT MANCKAKADAVU": {
+    "CDOM": 0.9115347981435737,
+    "Turbidity_Index": -0.02220838702247312,
+    "Chlorophyll_a": 0.2858970196306823,
+    "Kd490": 0.5744330801382534,
+    "Sat_Source": "landsat"
+  },
+  "Palappuzha": {
+    "CDOM": 0.9354530094576099,
+    "Turbidity_Index": -0.02929444616468304,
+    "Chlorophyll_a": 0.35981233575579025,
+    "Kd490": 0.5672167418811276,
+    "Sat_Source": "landsat"
+  },
+  "F.C.S. Kurudamannil": {
+    "CDOM": 0.9372566310632352,
+    "Turbidity_Index": -0.02984674935934419,
+    "Chlorophyll_a": 0.36432937006380955,
+    "Kd490": 0.5667061229446583,
+    "Sat_Source": "landsat"
+  },
+  "Baveli": {
+    "CDOM": 0.902188883217695,
+    "Turbidity_Index": -0.015630627321680114,
+    "Chlorophyll_a": 0.32352625703904875,
+    "Kd490": 0.5725165382534919,
+    "Sat_Source": "landsat"
+  },
+  "WAINGANGA D/S OF GAURAV PAPER MILLS NEAR JACKWELL BRAMHPURI CHANDRAPUR": {
+    "CDOM": 0.8381739180496309,
+    "Turbidity_Index": 0.012914875061255857,
+    "Chlorophyll_a": 0.20282537450003624,
+    "Kd490": 0.5817508218778662,
+    "Sat_Source": "landsat"
+  },
+  "WAINGANGA U/S OF GAURAV PAPER MILLS NEAR JACKWELL BRAMHPURI CHANDRAPUR": {
+    "CDOM": 0.8381567851201184,
+    "Turbidity_Index": 0.012929165325407672,
+    "Chlorophyll_a": 0.20279697724313997,
+    "Kd490": 0.5817461432538361,
+    "Sat_Source": "landsat"
+  },
+  "Malangaion": {
+    "CDOM": 0.8217679014107356,
+    "Turbidity_Index": 0.03181543279231209,
+    "Chlorophyll_a": 0.17861316166605948,
+    "Kd490": 0.57139423345222,
+    "Sat_Source": "landsat"
+  },
+  "Arjunwad (Seasonal)": {
+    "CDOM": 0.8887018996943886,
+    "Turbidity_Index": 0.003310625247157465,
+    "Chlorophyll_a": 0.19581288983383577,
+    "Kd490": 0.5592291871571611,
+    "Sat_Source": "landsat"
+  },
+  "Terwad (Seasonal)": {
+    "CDOM": 0.8961946728786653,
+    "Turbidity_Index": 0.00011392353956627371,
+    "Chlorophyll_a": 0.20321262056093697,
+    "Kd490": 0.5580643033584992,
+    "Sat_Source": "landsat"
+  },
+  "SEA WATER AT CHARNI ROAD CHOUPATHY GIRGAON MUMBAI": {
+    "CDOM": 0.9559980788514053,
+    "Turbidity_Index": -0.03279537858497396,
+    "Chlorophyll_a": -0.024387600188271068,
+    "Kd490": 0.5592628486030207,
+    "Sat_Source": "landsat"
+  },
+  "SEA WATER AT GATEWAY OF INDIACOLABA MUMBAI": {
+    "CDOM": 0.9531306517977629,
+    "Turbidity_Index": -0.03068003992543046,
+    "Chlorophyll_a": -0.03198455141575477,
+    "Kd490": 0.5585196664089634,
+    "Sat_Source": "landsat"
+  },
+  "SEA WATER AT HAJI ALI WORLI MUMBAI": {
+    "CDOM": 0.9531227744393299,
+    "Turbidity_Index": -0.03205702626739935,
+    "Chlorophyll_a": -0.01446216839635491,
+    "Kd490": 0.5601701600165925,
+    "Sat_Source": "landsat"
+  },
+  "SEA WATER AT SHIVAJI PARK DADAR CHOUPATHYDADAR MUMBAI": {
+    "CDOM": 0.9365611141537123,
+    "Turbidity_Index": -0.020417311635029477,
+    "Chlorophyll_a": 0.01625176703000357,
+    "Kd490": 0.5569299012697758,
+    "Sat_Source": "landsat"
+  },
+  "SEA WATER AT WORLI SEA FACE WORLI MUMBAI": {
+    "CDOM": 0.9494746525524838,
+    "Turbidity_Index": -0.030094427762617105,
+    "Chlorophyll_a": -0.008856905279620792,
+    "Kd490": 0.560143524736206,
+    "Sat_Source": "landsat"
+  },
+  "SEA WATER AT NARIMAN POINT COLABA MUMBAI": {
+    "CDOM": 0.9558440729888115,
+    "Turbidity_Index": -0.033733592990793114,
+    "Chlorophyll_a": -0.03590610247994026,
+    "Kd490": 0.5603644593656408,
+    "Sat_Source": "landsat"
+  },
+  "SEA WATER AT MALABAR HILL WALKESHWAR MUMBAI": {
+    "CDOM": 0.9607052729893959,
+    "Turbidity_Index": -0.03705540761438983,
+    "Chlorophyll_a": -0.02839483634642609,
+    "Kd490": 0.5613003907013229,
+    "Sat_Source": "landsat"
+  },
+  "SEA WATER AT JUHU BEACH JUHUGAON SANTACRUZ MUMBAI": {
+    "CDOM": 0.9280461813072618,
+    "Turbidity_Index": -0.018126875631695037,
+    "Chlorophyll_a": 0.04624094151944688,
+    "Kd490": 0.5594918900044665,
+    "Sat_Source": "landsat"
+  },
+  "SEA WATER AT VERSOVA BEACH VERSOVA ANDHERI MUMBAI": {
+    "CDOM": 0.9233545146762319,
+    "Turbidity_Index": -0.018041184538155793,
+    "Chlorophyll_a": 0.042966274749414425,
+    "Kd490": 0.5622443854462122,
+    "Sat_Source": "landsat"
+  },
+  "VASHI CREEK AT AIROLI BRIDGEAIROLI THANE": {
+    "CDOM": 0.9089707588758645,
+    "Turbidity_Index": -0.0004807181410757318,
+    "Chlorophyll_a": 0.1497814301310291,
+    "Kd490": 0.5510015057391745,
+    "Sat_Source": "landsat"
+  },
+  "VASHI CREEK AT VASHI BRIDGE VASHITHANE": {
+    "CDOM": 0.9156196479932852,
+    "Turbidity_Index": -0.002842050878798105,
+    "Chlorophyll_a": 0.0943575885500026,
+    "Kd490": 0.5496106829478805,
+    "Sat_Source": "landsat"
+  },
+  "MAHIM CREEK AT MAHIM BAY MAHIM MUMBAI": {
+    "CDOM": 0.9359015244106399,
+    "Turbidity_Index": -0.02128355585930343,
+    "Chlorophyll_a": 0.018691263056715448,
+    "Kd490": 0.5583104176490323,
+    "Sat_Source": "landsat"
+  },
+  "Vishnupuri Dam": {
+    "CDOM": 0.8694657977443588,
+    "Turbidity_Index": 0.004738174876341825,
+    "Chlorophyll_a": 0.19360992372606664,
+    "Kd490": 0.5698592653350629,
+    "Sat_Source": "landsat"
+  },
+  "GODAVARI AT VISHNUPURINANDED NANDED": {
+    "CDOM": 0.87116926135581,
+    "Turbidity_Index": 0.006645544083172648,
+    "Chlorophyll_a": 0.17671862687363799,
+    "Kd490": 0.566598988929142,
+    "Sat_Source": "landsat"
+  },
+  "DARNA RIVER AT ASWALI (DARNA DAM) LGATPURI NASHIK": {
+    "CDOM": 0.8696379481149452,
+    "Turbidity_Index": 0.011426586320557024,
+    "Chlorophyll_a": 0.18708695883856588,
+    "Kd490": 0.5627632203858124,
+    "Sat_Source": "landsat"
+  },
+  "ARNALA SEA ARNALA VASAI THANE": {
+    "CDOM": 0.8889796917019572,
+    "Turbidity_Index": -0.005968328518377967,
+    "Chlorophyll_a": 0.021450825914522832,
+    "Kd490": 0.5697670117433308,
+    "Sat_Source": "landsat"
+  },
+  "KHAREKURAN MURBE CREEK KHAREKURAN PALGHAR THANE": {
+    "CDOM": 0.8795441012628912,
+    "Turbidity_Index": 0.0010161810352610119,
+    "Chlorophyll_a": 0.07778967373615724,
+    "Kd490": 0.5680600213386409,
+    "Sat_Source": "landsat"
+  },
+  "NAVAPURA SEA NAVAPUR PALGHAR THANE": {
+    "CDOM": 0.8792572614420661,
+    "Turbidity_Index": -0.0006174390791331992,
+    "Chlorophyll_a": 0.05544793165988187,
+    "Kd490": 0.570204168035907,
+    "Sat_Source": "landsat"
+  },
+  "SARAWALI CREEK SARAWALI PALGHAR THANE": {
+    "CDOM": 0.872695902587002,
+    "Turbidity_Index": 0.010221320564981514,
+    "Chlorophyll_a": 0.15475604019696565,
+    "Kd490": 0.5620756266175814,
+    "Sat_Source": "landsat"
+  },
+  "DANDI CREEK DANDI PALGHAR THANE": {
+    "CDOM": 0.8783754011735799,
+    "Turbidity_Index": -0.0005242229649866511,
+    "Chlorophyll_a": 0.0527827706405199,
+    "Kd490": 0.5707051856071456,
+    "Sat_Source": "landsat"
+  },
+  "SAVTA CREEK SAVTA DAHANU THANE": {
+    "CDOM": 0.8651324492115449,
+    "Turbidity_Index": 0.010744155442032053,
+    "Chlorophyll_a": 0.1855140943777366,
+    "Kd490": 0.5664965982298792,
+    "Sat_Source": "landsat"
+  },
+  "DAHANU CREEK AT DAHANU FORT DANUGAON DAHANU THANE": {
+    "CDOM": 0.8550976978466437,
+    "Turbidity_Index": 0.008687566317296327,
+    "Chlorophyll_a": 0.08970219230449653,
+    "Kd490": 0.575976487617012,
+    "Sat_Source": "landsat"
+  },
+  "BHIMA RIVER-BACKWATER OF UJANI DAM NEAR RAW WATER PUMP HOUSE KUMBARGAON INDAPUR PUNE": {
+    "CDOM": 0.9189797340589649,
+    "Turbidity_Index": -0.011760828872905211,
+    "Chlorophyll_a": 0.1467995265905025,
+    "Kd490": 0.558197812842492,
+    "Sat_Source": "landsat"
+  },
+  "KARAMBAVANE CREEK AT CHIPLUN KARAMBAVANE RATNAGIRI": {
+    "CDOM": 0.9070973849298165,
+    "Turbidity_Index": -0.010928872585973528,
+    "Chlorophyll_a": 0.26820227897238597,
+    "Kd490": 0.5639484068836491,
+    "Sat_Source": "landsat"
+  },
+  "MADVI SEA WATER NEAR JODHALE MARUTI TEMPLE MADVIGAON RATNAGIRI RATNAGIRI": {
+    "CDOM": 0.9599639485683552,
+    "Turbidity_Index": -0.02666185534012672,
+    "Chlorophyll_a": 0.10911071672508879,
+    "Kd490": 0.551309453239766,
+    "Sat_Source": "landsat"
+  },
+  "SEA WATER AT BHAGWATI BUNDER NEAR ULTRA TECH CEMENT JETTY MIRKARWADA RATNAGIRI RATNAGIRI": {
+    "CDOM": 0.9692301825158868,
+    "Turbidity_Index": -0.02958999602203254,
+    "Chlorophyll_a": 0.09447362063926042,
+    "Kd490": 0.5491571438708199,
+    "Sat_Source": "landsat"
+  },
+  "SEA WATER AT GANAPATIPULE RATNAGIRI RATNAGIRI": {
+    "CDOM": 0.9574915583102962,
+    "Turbidity_Index": -0.026453957012496667,
+    "Chlorophyll_a": 0.11664220815904491,
+    "Kd490": 0.5523540221349471,
+    "Sat_Source": "landsat"
+  },
+  "Samdoli (Seasonal)": {
+    "CDOM": 0.8904262637838999,
+    "Turbidity_Index": 0.003994506029347044,
+    "Chlorophyll_a": 0.19929636165435038,
+    "Kd490": 0.5573579392482021,
+    "Sat_Source": "landsat"
+  },
+  "RIVER KALNA AT CHANDEL- PERNEM GOA": {
+    "CDOM": 0.9039124894153815,
+    "Turbidity_Index": -0.013423055325124096,
+    "Chlorophyll_a": 0.2925348462269736,
+    "Kd490": 0.5690204022803076,
+    "Sat_Source": "landsat"
+  },
+  "BASSEIN CREEK AT VASAIFORT AT BASSEIN  VASAITHANE": {
+    "CDOM": 0.8945880553871521,
+    "Turbidity_Index": 0.0035388583715191897,
+    "Chlorophyll_a": 0.15567219057371962,
+    "Kd490": 0.5553905224695227,
+    "Sat_Source": "landsat"
+  },
+  "BHAYANDER CREEK AT D/S OF RAILWAY BRIDGE JASAL PARK CHOUPATHY NAVGHAR BHAYANDER THANE": {
+    "CDOM": 0.8938770393994921,
+    "Turbidity_Index": 0.000731150543330479,
+    "Chlorophyll_a": 0.1396632098022718,
+    "Kd490": 0.5590678236685868,
+    "Sat_Source": "landsat"
+  },
+  "ULHAS CREEK AT KOLSHET RETI BUNDER KOLSHET THANE": {
+    "CDOM": 0.893606111247952,
+    "Turbidity_Index": 0.0038134466485117238,
+    "Chlorophyll_a": 0.1569236452234513,
+    "Kd490": 0.5556975572341861,
+    "Sat_Source": "landsat"
+  },
+  "ULHAS CREEK AT VERSOVA BRIDGE VERSOVA VASAI THANE": {
+    "CDOM": 0.8906188155205702,
+    "Turbidity_Index": 0.002890188169279916,
+    "Chlorophyll_a": 0.16647686813199114,
+    "Kd490": 0.5586785922616171,
+    "Sat_Source": "landsat"
+  },
+  "UTTAN SEA UTTAN BHAYANDER THANE": {
+    "CDOM": 0.898854890209927,
+    "Turbidity_Index": -0.009171834758659271,
+    "Chlorophyll_a": 0.02527946589009998,
+    "Kd490": 0.5671794528199376,
+    "Sat_Source": "landsat"
+  },
+  "ULHAS CREEK AT GAIMUKH AT NAGLA BUNDER ON GHOD BUNDER ROAD NAGLA THANE": {
+    "CDOM": 0.8862994652010571,
+    "Turbidity_Index": 0.0046245549982456575,
+    "Chlorophyll_a": 0.16795688751154458,
+    "Kd490": 0.5594256084498194,
+    "Sat_Source": "landsat"
+  },
+  "ULHAS CREEK AT RETI BUNDER D/S OF KALYAN-BHIWANDI BRIDGE KALYANKALYAN THANE": {
+    "CDOM": 0.8806918088946863,
+    "Turbidity_Index": 0.008876063194832145,
+    "Chlorophyll_a": 0.1493203070246985,
+    "Kd490": 0.55814535961225,
+    "Sat_Source": "landsat"
+  },
+  "THANE CREEK AT KALWA ROAD BRIDGE KALWA THANE": {
+    "CDOM": 0.9018447924757835,
+    "Turbidity_Index": 0.001042731285091635,
+    "Chlorophyll_a": 0.15613546584878396,
+    "Kd490": 0.5536749198329168,
+    "Sat_Source": "landsat"
+  },
+  "ULHAS CREEK AT MUMBRA RETI BUNDER VILLAGE MUMBRA THANE": {
+    "CDOM": 0.8952246833064113,
+    "Turbidity_Index": 0.004161556307916769,
+    "Chlorophyll_a": 0.1467993922173578,
+    "Kd490": 0.5543089641244037,
+    "Sat_Source": "landsat"
+  },
+  "MORAMBAMARINE CANAL": {
+    "CDOM": 0.9467441241326724,
+    "Turbidity_Index": -0.02200349649108795,
+    "Chlorophyll_a": 0.33111399672991326,
+    "Kd490": 0.5521990648491245,
+    "Sat_Source": "landsat"
+  },
+  "CHITHE STREAM ARMED VENG NR MINI SPORTS COMPLEX": {
+    "CDOM": 0.9386791785479627,
+    "Turbidity_Index": -0.02832736403174344,
+    "Chlorophyll_a": 0.32913340291243637,
+    "Kd490": 0.5643456888059024,
+    "Sat_Source": "landsat"
+  },
+  "CHATHE RIVER NEAR CHRISTIAN INSTITUTE OF HEALTH SCIENCES AND RESEARCH (CIHSR) DIMAPUR": {
+    "CDOM": 0.9015110259054598,
+    "Turbidity_Index": -0.008877954533857774,
+    "Chlorophyll_a": 0.2530126777569191,
+    "Kd490": 0.5654190740665075,
+    "Sat_Source": "landsat"
+  },
+  "BUDHABALANGA AT BALASORE U/S": {
+    "CDOM": 0.8562959946906055,
+    "Turbidity_Index": 0.004295980855248429,
+    "Chlorophyll_a": 0.2555682927653632,
+    "Kd490": 0.5795599749905863,
+    "Sat_Source": "landsat"
+  },
+  "BUDHABALANGA AT D/S OF BARIPADA TOWN": {
+    "CDOM": 0.8562959946906055,
+    "Turbidity_Index": 0.004295980855248429,
+    "Chlorophyll_a": 0.2555682927653632,
+    "Kd490": 0.5795599749905863,
+    "Sat_Source": "landsat"
+  },
+  "SINGDA JHOR (TALCHER KANIHA ROAD BRIDGE BALANGI)": {
+    "CDOM": 0.8994834594201389,
+    "Turbidity_Index": -0.016662708603900324,
+    "Chlorophyll_a": 0.20481656008509846,
+    "Kd490": 0.5753469371306845,
+    "Sat_Source": "landsat"
+  },
+  "PURI CANAL AT HANSAPAL": {
+    "CDOM": 0.8590392332705132,
+    "Turbidity_Index": 0.0017952876436359382,
+    "Chlorophyll_a": 0.22894808131787245,
+    "Kd490": 0.5806141430997378,
+    "Sat_Source": "landsat"
+  },
+  "PURI CANAL AT JAGANNATHPUR": {
+    "CDOM": 0.8600070142267865,
+    "Turbidity_Index": 0.0011784885557867381,
+    "Chlorophyll_a": 0.22893126822309737,
+    "Kd490": 0.5808091282557067,
+    "Sat_Source": "landsat"
+  },
+  "ATHARABANKI CREEK": {
+    "CDOM": 0.938452719097455,
+    "Turbidity_Index": -0.024909916218962585,
+    "Chlorophyll_a": 0.11920481156764633,
+    "Kd490": 0.5618195437675542,
+    "Sat_Source": "landsat"
+  },
+  "BRAHMANI AT KAMALANGA (TALCHER D/S)": {
+    "CDOM": 0.8905353209417185,
+    "Turbidity_Index": -0.011583023521143775,
+    "Chlorophyll_a": 0.19343317537120575,
+    "Kd490": 0.5750582746465253,
+    "Sat_Source": "landsat"
+  },
+  "Kamalanga": {
+    "CDOM": 0.8883838339103237,
+    "Turbidity_Index": -0.011009446234470345,
+    "Chlorophyll_a": 0.19275774285247455,
+    "Kd490": 0.5758216030608446,
+    "Sat_Source": "landsat"
+  },
+  "BUDHABALANGA AT BALASORE D/S": {
+    "CDOM": 0.8737819415940186,
+    "Turbidity_Index": -0.0017722245920584322,
+    "Chlorophyll_a": 0.14546257926839232,
+    "Kd490": 0.575289581069438,
+    "Sat_Source": "landsat"
+  },
+  "RUSHIKULYA AT GANJAM D/S (NEAR POTTAGARH PORT)": {
+    "CDOM": 0.9272686906429615,
+    "Turbidity_Index": -0.024770748521892195,
+    "Chlorophyll_a": 0.14101481364505486,
+    "Kd490": 0.56841021258135,
+    "Sat_Source": "landsat"
+  },
+  "MANGALA AT PURI U/S MALATIPATPUR": {
+    "CDOM": 0.8945902715329451,
+    "Turbidity_Index": -0.01346046611441857,
+    "Chlorophyll_a": 0.22007981887494163,
+    "Kd490": 0.5746592352244263,
+    "Sat_Source": "landsat"
+  },
+  "PARVATI SAGAR ( RILIGIOUS POND OF PURI CITY)": {
+    "CDOM": 0.9563094149706091,
+    "Turbidity_Index": -0.030349435039563045,
+    "Chlorophyll_a": 0.1340739253514213,
+    "Kd490": 0.5582155804760193,
+    "Sat_Source": "landsat"
+  },
+  "MANGALA AT PURI D/S GOLASAHI": {
+    "CDOM": 0.9446712541080032,
+    "Turbidity_Index": -0.027169052107444643,
+    "Chlorophyll_a": 0.15024878098374037,
+    "Kd490": 0.5613645664383112,
+    "Sat_Source": "landsat"
+  },
+  "MARKANDA POKHARI ( RILIGIOUS POND OF PURI CITY)": {
+    "CDOM": 0.9517995903711113,
+    "Turbidity_Index": -0.027842630625339745,
+    "Chlorophyll_a": 0.13826472011790947,
+    "Kd490": 0.5581399112595374,
+    "Sat_Source": "landsat"
+  },
+  "SWETAGANGA ( RILIGIOUS POND OF PURI CITY)": {
+    "CDOM": 0.9622362081280226,
+    "Turbidity_Index": -0.03098284871655024,
+    "Chlorophyll_a": 0.12416388473365648,
+    "Kd490": 0.5556114446536592,
+    "Sat_Source": "landsat"
+  },
+  "PURI": {
+    "CDOM": 0.9710761365557341,
+    "Turbidity_Index": -0.033337377242727846,
+    "Chlorophyll_a": 0.11104066661327835,
+    "Kd490": 0.5531651440972771,
+    "Sat_Source": "landsat"
+  },
+  "PURI CANAL AT CHANDANPUR": {
+    "CDOM": 0.8857435148775193,
+    "Turbidity_Index": -0.0051923506152792434,
+    "Chlorophyll_a": 0.21891619549379004,
+    "Kd490": 0.5712441721109985,
+    "Sat_Source": "landsat"
+  },
+  "INDRADYUMNA TANK ( RILIGIOUS POND OF PURI CITY)": {
+    "CDOM": 0.9508942892593452,
+    "Turbidity_Index": -0.025740847165557967,
+    "Chlorophyll_a": 0.1367235644213898,
+    "Kd490": 0.556565303712888,
+    "Sat_Source": "landsat"
+  },
+  "NARENDRA POKHARI ( RILIGIOUS POND OF PURI CITY)": {
+    "CDOM": 0.9532703450941659,
+    "Turbidity_Index": -0.027673313429351802,
+    "Chlorophyll_a": 0.13569226312828445,
+    "Kd490": 0.5571775145963498,
+    "Sat_Source": "landsat"
+  },
+  "STP PURI AT MANGALAGHAT": {
+    "CDOM": 0.9471779875132322,
+    "Turbidity_Index": -0.02764047943620395,
+    "Chlorophyll_a": 0.14648515472618134,
+    "Kd490": 0.560462979111458,
+    "Sat_Source": "landsat"
+  },
+  "Sankalang": {
+    "CDOM": 0.9878918847554281,
+    "Turbidity_Index": -0.014543928566136524,
+    "Chlorophyll_a": 0.16696376904123356,
+    "Kd490": 0.5240746494117051,
+    "Sat_Source": "landsat"
+  },
+  "TAMBIRAPARANI AT SRIVAIKUNTAM D/S OF SK ANAICUT TIRUNELVELI TAMILNADU": {
+    "CDOM": 0.8320773531675106,
+    "Turbidity_Index": 0.02019889697213299,
+    "Chlorophyll_a": 0.2204642773375573,
+    "Kd490": 0.5784780782581386,
+    "Sat_Source": "landsat"
+  },
+  "TAMBIRAPARANI AT KALLIDAI KURICHI TIRUNELVELI TAMILNADU": {
+    "CDOM": 0.8539557183266904,
+    "Turbidity_Index": 0.008482270591587673,
+    "Chlorophyll_a": 0.25727980159217934,
+    "Kd490": 0.5772002970196046,
+    "Sat_Source": "landsat"
+  },
+  "TAMBIRAPARANI AT VELLAKOIL TIRUNELVELI TAMILNADU": {
+    "CDOM": 0.8200165893452778,
+    "Turbidity_Index": 0.024084047580773225,
+    "Chlorophyll_a": 0.21494282078201135,
+    "Kd490": 0.582101682049672,
+    "Sat_Source": "landsat"
+  },
+  "RIVER TAMRABARANI AT TIRUNELVELI D/S": {
+    "CDOM": 0.8262773333820714,
+    "Turbidity_Index": 0.022299249893487267,
+    "Chlorophyll_a": 0.21967373842450258,
+    "Kd490": 0.5797783295312818,
+    "Sat_Source": "landsat"
+  },
+  "TAMBIRAPARANI AT TIRUNELVELI COLLECTORATE TAMILNADU.": {
+    "CDOM": 0.8211534953364741,
+    "Turbidity_Index": 0.023967564731296267,
+    "Chlorophyll_a": 0.21488571225605,
+    "Kd490": 0.5814290915414527,
+    "Sat_Source": "landsat"
+  },
+  "TAMBIRAPARANI AT SIVALAPERI CONFLUENCE POINT OF KUTTRALAM FALLS D/S OF PALAYAMKOTTAI TIRUNELVELI TA": {
+    "CDOM": 0.8196777933873731,
+    "Turbidity_Index": 0.02333347993920562,
+    "Chlorophyll_a": 0.2177072176072124,
+    "Kd490": 0.583240504459758,
+    "Sat_Source": "landsat"
+  },
+  "TIRUNELVELI": {
+    "CDOM": 0.8273463694425587,
+    "Turbidity_Index": 0.021506879402152512,
+    "Chlorophyll_a": 0.21909507391248453,
+    "Kd490": 0.5799516192593682,
+    "Sat_Source": "landsat"
+  },
+  "HOWRAH RIVER AT KALABAGAN WEST TRIPURA": {
+    "CDOM": 0.9330066111467337,
+    "Turbidity_Index": -0.024136718845580746,
+    "Chlorophyll_a": 0.33086815524569013,
+    "Kd490": 0.5630782054778691,
+    "Sat_Source": "landsat"
+  },
+  "Shiv Puri Rishikesh": {
+    "CDOM": 0.9273376606686611,
+    "Turbidity_Index": -0.015232622102085997,
+    "Chlorophyll_a": 0.2742249849772316,
+    "Kd490": 0.5565603816735669,
+    "Sat_Source": "landsat"
+  },
+  "Nougoan": {
+    "CDOM": 0.9130739147445672,
+    "Turbidity_Index": -0.006156409115792858,
+    "Chlorophyll_a": 0.25955949708931264,
+    "Kd490": 0.5551638124410032,
+    "Sat_Source": "landsat"
+  },
+  "JALANGI D/S OF KRISHNA NAGAR NADIA": {
+    "CDOM": 0.8996322649866121,
+    "Turbidity_Index": -0.014004757103162072,
+    "Chlorophyll_a": 0.24960644648783187,
+    "Kd490": 0.57186473993632,
+    "Sat_Source": "landsat"
+  },
+  "GANGA AT DIAMOND HARBOUR 24 PARGANAS (S)WEST BENGAL": {
+    "CDOM": 0.8926193966583779,
+    "Turbidity_Index": -0.013317257391914522,
+    "Chlorophyll_a": 0.20003993030944195,
+    "Kd490": 0.5755407130315203,
+    "Sat_Source": "landsat"
+  },
+  "ISLAMPUR (SEASONAL)": {
+    "CDOM": 0.891672545186955,
+    "Turbidity_Index": -0.016872269979151193,
+    "Chlorophyll_a": 0.262243960488015,
+    "Kd490": 0.5802509066296285,
+    "Sat_Source": "landsat"
+  }
+}
