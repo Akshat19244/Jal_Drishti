@@ -37,7 +37,7 @@ class SentinelModule {
   async loadDataPoints(parameter = 'cdom', date = null) {
     const mapLoading = document.getElementById('sentinelMapLoading');
     if (mapLoading) {
-      mapLoading.textContent = 'Loading satellite data points...';
+      mapLoading.textContent = 'Loading Landsat data points...';
       mapLoading.style.display = 'block';
     }
 
@@ -52,14 +52,14 @@ class SentinelModule {
         this.dataPoints = response.data.points || [];
         this.renderDataPoints(response.data.parameter);
         this.updateExceedanceSummary(this.dataPoints, parameter);
-        this.updateSourceIndicator(response.data.source);
+        this.updateSourceIndicator(response.data.source, response.data.data_year, response.data.description);
       } else {
         this.showMapError('No satellite data available');
       }
     } catch (e) {
       console.error('[Satellite] Failed to load data points:', e);
       if (mapLoading) {
-        mapLoading.textContent = 'Satellite data unavailable (Earth Engine not configured)';
+        mapLoading.textContent = 'Landsat data unavailable (Earth Engine not configured)';
         mapLoading.style.display = 'block';
         mapLoading.style.color = '#DC2626';
       }
@@ -119,6 +119,7 @@ class SentinelModule {
         weight: 2
       });
 
+      const satInfo = pt.satellite ? `${pt.satellite.toUpperCase()} ${pt.data_year || ''}` : '';
       circle.bindPopup(`
         <div style="font-family:monospace;font-size:12px;line-height:1.6;min-width:220px">
           <div style="font-weight:700;font-size:14px;margin-bottom:4px">${beach_name}</div>
@@ -127,6 +128,7 @@ class SentinelModule {
             <b>Status:</b> <span style="color:${statusColor};font-weight:700">${statusLabel}</span><br>
             <b>Safe Limit:</b> ${limit} ${unit}
           </div>
+          ${satInfo ? `<div style="font-size:10px;color:#0ea5e9;margin-top:2px">🛰 ${satInfo} composite</div>` : ''}
           <div style="font-size:10px;color:#888">
             ${status === 'exceeded' ? '⚠ This parameter exceeds the safe limit!' : '✓ Within acceptable range'}
           </div>
@@ -197,12 +199,20 @@ class SentinelModule {
     }
   }
 
-  updateSourceIndicator(source) {
+  updateSourceIndicator(source, dataYear, description) {
     const indicator = document.getElementById('sentinelDataSource');
     if (indicator) {
-      const sourceLabel = source === 'gee' ? 'Google Earth Engine (Sentinel-2)' :
-                          source === 'nasa' ? 'NASA Ocean Color (MODIS)' :
-                          'Proxy (CPCB correlations)';
+      let sourceLabel = source === 'landsat' ? 'Google Earth Engine (Landsat 8/9)' :
+                        source === 'sentinel' ? 'Google Earth Engine (Sentinel-2)' :
+                        source === 'gee' ? 'Google Earth Engine' :
+                        source === 'nasa' ? 'NASA Ocean Color (MODIS)' :
+                        'Proxy (CPCB correlations)';
+      if (dataYear) {
+        sourceLabel += ' \u00B7 ' + dataYear;
+      }
+      if (description) {
+        sourceLabel += ' \u00B7 ' + description;
+      }
       indicator.textContent = sourceLabel;
     }
   }
@@ -279,7 +289,7 @@ class SentinelModule {
     const controlsDiv = document.createElement('div');
     controlsDiv.style.cssText = 'display:flex;gap:1rem;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap';
     controlsDiv.innerHTML = `
-      <label style="font-family:var(--mono);font-size:.7rem;color:var(--t3)">Select Date:</label>
+      <label style="font-family:var(--mono);font-size:.7rem;color:var(--t3)">Select Date (CPCB):</label>
       <input type="date" id="sentinelDatePicker"
         style="background:var(--bg3);border:1px solid var(--border);color:var(--t1);
         font-family:var(--mono);font-size:.7rem;padding:6px 10px;border-radius:4px">

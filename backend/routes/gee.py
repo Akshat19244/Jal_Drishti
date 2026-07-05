@@ -94,18 +94,24 @@ def get_gee_data_points():
             value = 0.0
             source = 'proxy'
 
+            data_year = None
             if gee.is_available():
                 try:
-                    start = (datetime.strptime(date_str, '%Y-%m-%d') - timedelta(days=30)).strftime('%Y-%m-%d')
-                    end = (datetime.strptime(date_str, '%Y-%m-%d') + timedelta(days=30)).strftime('%Y-%m-%d')
-                    indices = gee.get_water_quality_indices(bbox, start, end)
-                    vals = indices.get(param_gee_name, {})
-                    val = vals.get('mean', 0.0)
-                    if val is not None and not np.isnan(val) and val > 0.0:
-                        value = float(val)
-                        source = 'gee'
+                    # Use Landsat 8/9 with wide annual windows for coastal beaches
+                    for yr, (s, e) in {'2022': ('2022-01-01','2022-12-31'), '2023': ('2023-01-01','2023-12-31'), '2021': ('2021-01-01','2021-12-31')}.items():
+                        try:
+                            indices = gee._get_landsat_indices(bbox, s, e, max_cloud_cover=70)
+                            vals = indices.get(param_gee_name, {})
+                            val = vals.get('mean', 0.0)
+                            if val is not None and not np.isnan(val) and val > 0.0:
+                                value = float(val)
+                                source = 'landsat'
+                                data_year = yr
+                                break
+                        except Exception:
+                            continue
                 except Exception as e:
-                    logger.debug(f"[GEE] No data for {beach_name}: {e}")
+                    logger.debug(f"[GEE] No Landsat data for {beach_name}: {e}")
 
             if source == 'proxy':
                 value = _get_beach_proxy_value(df, beach_name, parameter)
@@ -123,8 +129,16 @@ def get_gee_data_points():
                 'limit': exceedance['limit'],
                 'unit': exceedance['unit'],
                 'source': source,
+                'satellite': source if source in ('landsat', 'sentinel') else None,
+                'data_year': data_year,
                 'style': style
             })
+
+        # Determine overall satellite/source info
+        sat_types = set(p.get('satellite') for p in data_points if p.get('satellite'))
+        primary_source = next(iter(sat_types)) if len(sat_types) == 1 else ('landsat' if sat_types else 'proxy')
+        data_years = sorted(set(p['data_year'] for p in data_points if p.get('data_year')))
+        data_year_str = str(data_years[0]) if len(data_years) == 1 else f'{"–".join(str(y) for y in data_years)}' if data_years else None
 
         return jsonify({
             'success': True,
@@ -133,7 +147,11 @@ def get_gee_data_points():
                 'total': len(data_points),
                 'date': date_str,
                 'parameter': parameter,
-                'source': 'gee' if gee.is_available() else 'proxy'
+                'source': primary_source,
+                'satellite': primary_source,
+                'data_year': data_year_str,
+                'resolution': '30m',
+                'description': f'Landsat 8/9 {data_year_str} median composite' if data_year_str else 'Landsat 8/9 composite'
             }
         })
 

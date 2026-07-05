@@ -96,7 +96,7 @@
     <li><a href="#predict-sec">Predict</a></li>
     <li><a href="#alerts">Alerts</a></li>
     <li><a href="#beaches">Beaches</a></li>
-    <li><a href="#sentinel">Satellite Data</a></li>
+    <li><a href="#sentinel">Landsat Map</a></li>
   </ul>
 
   <div style="display: flex; gap: 1rem; align-items: center;">
@@ -729,9 +729,9 @@
 <section id="sentinel">
   <div style="padding: 0 3rem;">
     <div class="section-eyebrow">Satellite Remote Sensing</div>
-    <h2 class="section-title">Satellite Water Quality Analysis</h2>
+    <h2 class="section-title">Landsat Map — Water Quality Analysis</h2>
     <p style="font-size: .95rem; color: var(--t2); max-width: 600px; margin-bottom: 2rem;">
-      Per-beach water quality indices from Google Earth Engine Sentinel-2 imagery (10-20m resolution) with CPCB limit exceedance detection.
+      Per-beach water quality indices from Google Earth Engine Landsat 8/9 imagery (30m resolution) with CPCB limit exceedance detection.
     </p>
 
     <!-- Spatial Map View -->
@@ -750,7 +750,7 @@
       </div>
       <div id="sentinelMapContainer" style="position: relative; height: 400px; border-radius: 8px; overflow: hidden; background: var(--bg3);">
         <div id="sentinelMap" style="width: 100%; height: 100%;"></div>
-        <div id="sentinelMapLoading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-family: var(--mono); font-size: .8rem; color: var(--t3);">Loading satellite data points...</div>
+        <div id="sentinelMapLoading" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-family: var(--mono); font-size: .8rem; color: var(--t3);">Loading Landsat data points...</div>
       </div>
       <div style="margin-top: 1rem; display: flex; gap: 2rem; font-family: var(--mono); font-size: .7rem; color: var(--t3); flex-wrap: wrap;">
         <div><span style="display: inline-block; width: 12px; height: 12px; background: #16A34A; border-radius: 50%; margin-right: 4px;"></span>Within Limit (Safe)</div>
@@ -842,9 +842,9 @@
     </div>
 
     <div style="margin-top: 2rem; padding: 1rem; background: var(--bg3); border-radius: 8px; font-family: var(--mono); font-size: .7rem; color: var(--t3);">
-      <strong>Data Source:</strong> <span id="sentinelDataSource">Google Earth Engine (Sentinel-2 L2A)</span> · 
+      <strong>Data Source:</strong> <span id="sentinelDataSource">Google Earth Engine (Landsat 8/9)</span> · 
       <strong>Exceedance:</strong> Values beyond limit appear <span style="color:#DC2626">red</span> on the map · 
-      <strong>Resolution:</strong> 20m
+      <strong>Resolution:</strong> 30m
     </div>
   </div>
 </section>
