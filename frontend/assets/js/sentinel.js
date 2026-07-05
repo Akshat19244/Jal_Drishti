@@ -1,5 +1,5 @@
 /* JalDrishti Satellite Data Points Module (GEE-powered)
-   Displays CDOM, Turbidity, Chlorophyll-a, Kd490 as per-river-body data points
+   Displays CDOM, Turbidity, Chlorophyll-a, Kd490 as per-beach data points
    on the Leaflet India map with exceedance limit color coding.
 */
 
@@ -102,7 +102,7 @@ class SentinelModule {
     const paramLabel = paramLabels[parameter] || parameter;
 
     this.dataPoints.forEach(pt => {
-      const { lat, lon, value, river_name, status, limit, unit, style } = pt;
+      const { lat, lon, value, name: beach_name, status, limit, unit, style } = pt;
       if (!lat || !lon) return;
 
       const statusLabel = status === 'exceeded' ? '⚠ EXCEEDS LIMIT' :
@@ -121,7 +121,7 @@ class SentinelModule {
 
       circle.bindPopup(`
         <div style="font-family:monospace;font-size:12px;line-height:1.6;min-width:220px">
-          <div style="font-weight:700;font-size:14px;margin-bottom:4px">${river_name}</div>
+          <div style="font-weight:700;font-size:14px;margin-bottom:4px">${beach_name}</div>
           <div style="border-top:1px solid #333;margin:4px 0;padding:4px 0">
             <b>${paramLabel}:</b> ${value.toFixed(4)} ${unit}<br>
             <b>Status:</b> <span style="color:${statusColor};font-weight:700">${statusLabel}</span><br>
@@ -188,10 +188,10 @@ class SentinelModule {
     const summaryEl = document.getElementById('exceedanceSummary');
     if (summaryEl) {
       if (exceeded.length > 0) {
-        summaryEl.innerHTML = `<span style="color:#DC2626">⚠ ${exceeded.length}/${points.length} river bodies exceed safe limit</span>`;
+        summaryEl.innerHTML = `<span style="color:#DC2626">⚠ ${exceeded.length}/${points.length} beaches exceed safe limit</span>`;
         summaryEl.style.display = 'block';
       } else {
-        summaryEl.innerHTML = `<span style="color:#16A34A">✓ All ${points.length} river bodies within safe limits</span>`;
+        summaryEl.innerHTML = `<span style="color:#16A34A">✓ All ${points.length} beaches within safe limits</span>`;
         summaryEl.style.display = 'block';
       }
     }
