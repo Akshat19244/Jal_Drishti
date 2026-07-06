@@ -4,7 +4,7 @@ Extended: now includes PathoWatch-style coastal heatmap data.
 """
 import math
 from flask import Blueprint, request, jsonify
-from services.data_service import DataService
+from services.data_service import DataService, is_near_coast
 from utils.cache import TTLCache
 
 beaches_bp = Blueprint('beaches', __name__)
@@ -57,7 +57,15 @@ def get_beach_heatmap():
                       'kochi','alappuzha','kozhikode','veli','vembanad']
         name_lower = df['Station_Name'].str.lower().fillna('')
         coast_mask = name_lower.str.contains('|'.join(coastal_kw), na=False)
-        coast_df = df[coast_mask & df['Latitude'].notna() & df['Fecal_Coliform'].notna()]
+        coast_df = df[coast_mask & df['Latitude'].notna() & df['Fecal_Coliform'].notna()].copy()
+
+        # Remove points in landlocked areas
+        if not coast_df.empty:
+            geo_mask = coast_df.apply(
+                lambda r: is_near_coast(r['Latitude'], r['Longitude'], r['State']),
+                axis=1
+            )
+            coast_df = coast_df[geo_mask]
 
         if year and str(year) != 'all':
             coast_df = coast_df[coast_df['Year'] == int(year)]

@@ -5,11 +5,46 @@ filtered, aggregated views for all API endpoints.
 """
 import requests
 import os
+import math
 import pandas as pd
 import numpy as np
 from functools import lru_cache
 from config import Config
 from services.wqi_calculator import calculate_wqi, classify_wqi
+
+# Indian coastal states (lowercase for case-insensitive matching)
+COASTAL_STATES = frozenset({
+    'gujarat', 'maharashtra', 'goa', 'karnataka', 'kerala',
+    'tamil nadu', 'andhra pradesh', 'odisha', 'west bengal',
+    'daman & diu', 'daman and diu', 'dadra & nagar haveli',
+    'dadra and nagar haveli', 'puducherry', 'pondicherry',
+    'andaman and nicobar islands', 'andaman & nicobar islands',
+    'lakshadweep',
+})
+
+# Simplified Indian coastline vertices (lat, lon) tracing clockwise from Gujarat
+INDIA_COASTLINE = [
+    (22.8, 69.0), (22.5, 69.6), (22.3, 70.2), (21.7, 70.5),
+    (21.5, 70.9), (21.0, 71.0), (20.9, 70.4), (20.7, 71.0),
+    (20.0, 71.5), (19.5, 72.0), (19.2, 72.5), (19.0, 72.8),
+    (18.5, 73.0), (18.0, 73.2), (17.5, 73.3), (17.0, 73.5),
+    (16.5, 73.5), (16.0, 73.5), (15.5, 73.7), (15.0, 74.0),
+    (14.9, 74.1), (14.5, 74.3), (14.0, 74.4), (13.5, 74.6),
+    (13.0, 74.7), (12.8, 74.8), (12.5, 74.9), (12.0, 75.2),
+    (11.5, 75.6), (11.0, 75.9), (10.5, 76.0), (10.0, 76.3),
+    (9.5, 76.3), (9.0, 76.5), (8.5, 76.9), (8.0, 77.5),
+    (8.5, 78.0), (9.0, 78.5), (9.5, 78.8), (10.0, 79.2),
+    (10.5, 79.3), (11.0, 79.5), (11.5, 79.8), (12.0, 79.9),
+    (12.5, 80.1), (13.0, 80.2), (13.5, 80.1), (14.0, 80.2),
+    (14.5, 80.2), (15.0, 80.4), (15.5, 80.5), (16.0, 80.8),
+    (16.5, 81.0), (17.0, 81.5), (17.5, 82.0), (18.0, 82.5),
+    (18.5, 83.0), (19.0, 83.5), (19.5, 84.0), (20.0, 84.5),
+    (20.5, 85.5), (21.0, 86.0), (21.5, 87.0),
+    (21.7, 87.5), (21.8, 88.0), (22.0, 88.5),
+]
+
+COAST_BUFFER_KM = 120
+EARTH_RADIUS_KM = 6371.0
 
 
 class DataService:
@@ -570,7 +605,18 @@ class DataService:
             lambda x: any(kw in str(x).lower() for kw in beach_keywords)
             if pd.notna(x) else False
         )
-        beach_data = data[mask]
+        beach_data = data[mask].copy()
+
+        # Remove points in landlocked areas using coastal state + coastline proximity check
+        if not beach_data.empty:
+            geo_mask = beach_data.apply(
+                lambda r: is_near_coast(r['Latitude'], r['Longitude'], r['State']),
+                axis=1
+            )
+            removed = int((~geo_mask).sum())
+            if removed:
+                print(f"[DataService] get_beaches removed {removed} inland points far from coast")
+            beach_data = beach_data[geo_mask]
 
         # If no beaches found, create mock data from coastal stations
         if beach_data.empty or len(beach_data) < 3:
@@ -810,6 +856,39 @@ def _safe_round(val, decimals=2):
     if _math.isinf(f) or _math.isnan(f):
         return None
     return round(f, decimals)
+
+
+def _haversine_km(lat1, lon1, lat2, lon2):
+    """Haversine distance between two lat/lon points in km."""
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = (math.sin(dlat / 2) ** 2
+         + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2))
+         * math.sin(dlon / 2) ** 2)
+    return EARTH_RADIUS_KM * 2 * math.asin(math.sqrt(min(a, 1.0)))
+
+
+def min_distance_to_coast(lat, lon):
+    """Minimum distance in km from point to the Indian coastline approximation."""
+    min_d = float('inf')
+    for clat, clon in INDIA_COASTLINE:
+        d = _haversine_km(lat, lon, clat, clon)
+        if d < min_d:
+            min_d = d
+    return min_d
+
+
+def is_near_coast(lat, lon, state=None, buffer_km=COAST_BUFFER_KM):
+    """Check if a point is near the Indian coastline.
+
+    Stations in coastal states are always accepted.
+    Others must be within buffer_km of the coastline approximation.
+    """
+    if state and str(state).strip().lower() in COASTAL_STATES:
+        return True
+    if pd.isna(lat) or pd.isna(lon):
+        return False
+    return min_distance_to_coast(float(lat), float(lon)) <= buffer_km
 
 
 
