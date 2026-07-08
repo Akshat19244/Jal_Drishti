@@ -1,6 +1,7 @@
 /* JalDrishti Satellite Data Points Module (GEE-powered)
    Displays CDOM, Turbidity, Chlorophyll-a, Kd490 as per-beach data points
    on the Leaflet India map with exceedance limit color coding.
+   ALL 4 parameters are shown simultaneously per beach — no proxy/CSV fallback.
 */
 
 class SentinelModule {
@@ -16,8 +17,7 @@ class SentinelModule {
     await this.loadSentinelData();
     this.initSentinelMap();
     this.setupEventListeners();
-    // Load initial data points on the map
-    await this.loadDataPoints('cdom', this.currentDate);
+    await this.loadDataPoints(this.currentDate);
   }
 
   async loadSentinelData(date = null) {
@@ -34,15 +34,16 @@ class SentinelModule {
     }
   }
 
-  async loadDataPoints(parameter = 'cdom', date = null) {
+  async loadDataPoints(date = null) {
     const mapLoading = document.getElementById('sentinelMapLoading');
     if (mapLoading) {
-      mapLoading.textContent = 'Loading Landsat data points...';
+      mapLoading.textContent = 'Loading Landsat live data points...';
       mapLoading.style.display = 'block';
+      mapLoading.style.color = 'var(--t3)';
     }
 
     try {
-      const params = new URLSearchParams({ parameter });
+      const params = new URLSearchParams();
       if (date) params.append('date', date);
       const response = await app.fetch(`/api/gee/data-points?${params}`);
 
@@ -50,11 +51,11 @@ class SentinelModule {
 
       if (response.success && response.data) {
         this.dataPoints = response.data.points || [];
-        this.renderDataPoints(response.data.parameter);
-        this.updateExceedanceSummary(this.dataPoints, parameter);
+        this.renderDataPoints();
+        this.updateAllCards();
         this.updateSourceIndicator(response.data.source, response.data.data_year, response.data.description);
       } else {
-        this.showMapError('No satellite data available');
+        this.showMapError(response.error || 'No live satellite data available');
       }
     } catch (e) {
       console.error('[Satellite] Failed to load data points:', e);
@@ -80,7 +81,7 @@ class SentinelModule {
     this.markerLayer = L.layerGroup().addTo(this.sentinelMap);
   }
 
-  renderDataPoints(parameter) {
+  renderDataPoints() {
     if (!this.sentinelMap || !this.markerLayer) {
       this.initSentinelMap();
     }
@@ -88,7 +89,7 @@ class SentinelModule {
     this.markerLayer.clearLayers();
 
     if (!this.dataPoints || this.dataPoints.length === 0) {
-      this.showMapError('No data points found for selected parameter');
+      this.showMapError('No Landsat data points found for any beach');
       return;
     }
 
@@ -99,17 +100,15 @@ class SentinelModule {
       'chlorophyll': 'Chlorophyll-a',
       'kd490': 'Kd490'
     };
-    const paramLabel = paramLabels[parameter] || parameter;
 
     this.dataPoints.forEach(pt => {
-      const { lat, lon, value, name: beach_name, status, limit, unit, style } = pt;
-      if (!lat || !lon) return;
+      const { lat, lon, name, indices, overall_status, data_year, style } = pt;
+      if (!lat || !lon || !indices) return;
 
-      const statusLabel = status === 'exceeded' ? '⚠ EXCEEDS LIMIT' :
-                          status === 'moderate' ? 'Moderate' : 'Safe';
-
-      const statusColor = status === 'exceeded' ? '#DC2626' :
-                          status === 'moderate' ? '#D97706' : '#16A34A';
+      const statusColor = overall_status === 'exceeded' ? '#DC2626' :
+                          overall_status === 'moderate' ? '#D97706' : '#16A34A';
+      const statusLabel = overall_status === 'exceeded' ? '⚠ Exceeds Limit' :
+                          overall_status === 'moderate' ? 'Moderate' : 'Safe';
 
       const circle = L.circleMarker([lat, lon], {
         radius: style && style.radius ? style.radius : 8,
@@ -119,19 +118,38 @@ class SentinelModule {
         weight: 2
       });
 
-      const satInfo = pt.satellite ? `${pt.satellite.toUpperCase()} ${pt.data_year || ''}` : '';
+      let paramsHtml = '';
+      for (const [key, param] of Object.entries(indices)) {
+        const clr = param.status === 'exceeded' ? '#DC2626' :
+                    param.status === 'moderate' ? '#D97706' : '#16A34A';
+        const lbl = paramLabels[key] || key;
+        paramsHtml += `<tr>
+          <td style="padding:2px 8px 2px 0;color:#aaa">${lbl}</td>
+          <td style="padding:2px 8px;font-weight:600;text-align:right">${param.value.toFixed(4)}</td>
+          <td style="padding:2px 0 2px 8px;color:${clr}">${param.unit ? param.unit : ''}</td>
+          <td style="padding:2px 0;color:${clr};font-weight:600">${param.status}</td>
+        </tr>`;
+      }
+
+      const satInfo = data_year ? `Landsat ${data_year}` : 'Landsat';
       circle.bindPopup(`
-        <div style="font-family:monospace;font-size:12px;line-height:1.6;min-width:220px">
-          <div style="font-weight:700;font-size:14px;margin-bottom:4px">${beach_name}</div>
-          <div style="border-top:1px solid #333;margin:4px 0;padding:4px 0">
-            <b>${paramLabel}:</b> ${value.toFixed(4)} ${unit}<br>
-            <b>Status:</b> <span style="color:${statusColor};font-weight:700">${statusLabel}</span><br>
-            <b>Safe Limit:</b> ${limit} ${unit}
+        <div style="font-family:monospace;font-size:12px;line-height:1.6;min-width:280px">
+          <div style="font-weight:700;font-size:14px;margin-bottom:4px">${name}</div>
+          <div style="border-top:1px solid #333;border-bottom:1px solid #333;margin:4px 0;padding:4px 0">
+            <table style="width:100%;font-size:11px;border-collapse:collapse">
+              <tr style="color:#888;font-size:10px;border-bottom:1px solid #333">
+                <th style="text-align:left;padding:2px 8px 2px 0">Parameter</th>
+                <th style="text-align:right;padding:2px 8px">Value</th>
+                <th style="text-align:left;padding:2px 8px">Unit</th>
+                <th style="text-align:left;padding:2px 0">Status</th>
+              </tr>
+              ${paramsHtml}
+            </table>
           </div>
-          ${satInfo ? `<div style="font-size:10px;color:#0ea5e9;margin-top:2px">🛰 ${satInfo} composite</div>` : ''}
-          <div style="font-size:10px;color:#888">
-            ${status === 'exceeded' ? '⚠ This parameter exceeds the safe limit!' : '✓ Within acceptable range'}
+          <div style="margin-top:4px;padding:4px;background:rgba(255,255,255,0.05);border-radius:4px">
+            <span style="color:${statusColor};font-weight:700">Overall: ${statusLabel}</span>
           </div>
+          <div style="font-size:10px;color:#0ea5e9;margin-top:4px">🛰 ${satInfo} · 30m resolution</div>
         </div>
       `);
 
@@ -143,111 +161,87 @@ class SentinelModule {
       this.sentinelMap.fitBounds(bounds, { padding: [30, 30] });
     }
 
-    document.getElementById('sentinelMapLoading').style.display = 'none';
+    const loadingEl = document.getElementById('sentinelMapLoading');
+    if (loadingEl) loadingEl.style.display = 'none';
   }
 
-  updateExceedanceSummary(points, parameter) {
-    const exceeded = points.filter(p => p.status === 'exceeded');
-    const safe = points.filter(p => p.status === 'safe');
-    const moderate = points.filter(p => p.status === 'moderate');
+  updateAllCards() {
+    if (!this.dataPoints || this.dataPoints.length === 0) return;
 
-    // Update the status section in the cards
-    const paramDisplayMap = {
-      'cdom': { badge: 'cdomBadge', value: 'cdomValue' },
-      'turbidity': { badge: 'turbidityBadge', value: 'turbidityValue' },
-      'chlorophyll': { badge: 'chlorophyllBadge', value: 'chlorophyllValue' },
-      'kd490': { badge: 'kd490Badge', value: 'kd490Value' }
+    const config = {
+      cdom:         { valueEl: 'cdomValue',         badgeEl: 'cdomBadge' },
+      turbidity:    { valueEl: 'turbidityValue',    badgeEl: 'turbidityBadge' },
+      chlorophyll:  { valueEl: 'chlorophyllValue',  badgeEl: 'chlorophyllBadge' },
+      kd490:        { valueEl: 'kd490Value',        badgeEl: 'kd490Badge' },
     };
 
-    if (points.length > 0) {
-      const avgValue = points.reduce((s, p) => s + p.value, 0) / points.length;
-      const display = paramDisplayMap[parameter];
-      if (display) {
-        const valEl = document.getElementById(display.value);
-        if (valEl) {
-          valEl.textContent = avgValue.toFixed(3);
+    for (const [param, cfg] of Object.entries(config)) {
+      const values = this.dataPoints
+        .map(p => p.indices?.[param]?.value)
+        .filter(v => v !== undefined && v !== null);
+      if (values.length === 0) continue;
+
+      const avg = values.reduce((s, v) => s + v, 0) / values.length;
+      const valEl = document.getElementById(cfg.valueEl);
+      if (valEl) valEl.textContent = avg.toFixed(3);
+
+      const statuses = this.dataPoints.map(p => p.indices?.[param]?.status);
+      const exceeded = statuses.filter(s => s === 'exceeded').length;
+      const moderate = statuses.filter(s => s === 'moderate').length;
+
+      const badgeEl = document.getElementById(cfg.badgeEl);
+      if (badgeEl) {
+        let text, cls;
+        if (exceeded > statuses.length * 0.3) {
+          text = 'High'; cls = 'status-unsafe';
+        } else if (moderate > statuses.length * 0.3) {
+          text = 'Moderate'; cls = 'status-moderate';
+        } else {
+          text = 'Low'; cls = 'status-safe';
         }
-        const badgeEl = document.getElementById(display.badge);
-        if (badgeEl) {
-          let statusText, statusClass;
-          if (exceeded.length > points.length * 0.3) {
-            statusText = 'High';
-            statusClass = 'status-unsafe';
-          } else if (moderate.length > points.length * 0.3) {
-            statusText = 'Moderate';
-            statusClass = 'status-moderate';
-          } else {
-            statusText = 'Low';
-            statusClass = 'status-safe';
-          }
-          badgeEl.textContent = statusText;
-          badgeEl.className = `pred-badge ${statusClass}`;
-        }
+        badgeEl.textContent = text;
+        badgeEl.className = `pred-badge ${cls}`;
       }
     }
 
-    // Show exceedance summary in the map container header
     const summaryEl = document.getElementById('exceedanceSummary');
     if (summaryEl) {
+      const exceeded = this.dataPoints.filter(p => p.overall_status === 'exceeded');
       if (exceeded.length > 0) {
-        summaryEl.innerHTML = `<span style="color:#DC2626">⚠ ${exceeded.length}/${points.length} beaches exceed safe limit</span>`;
-        summaryEl.style.display = 'block';
+        summaryEl.innerHTML = `<span style="color:#DC2626">⚠ ${exceeded.length}/${this.dataPoints.length} beaches exceed safe limit</span>`;
       } else {
-        summaryEl.innerHTML = `<span style="color:#16A34A">✓ All ${points.length} beaches within safe limits</span>`;
-        summaryEl.style.display = 'block';
+        summaryEl.innerHTML = `<span style="color:#16A34A">✓ All ${this.dataPoints.length} beaches within safe limits</span>`;
       }
+      summaryEl.style.display = 'block';
     }
   }
 
   updateSourceIndicator(source, dataYear, description) {
     const indicator = document.getElementById('sentinelDataSource');
     if (indicator) {
-      let sourceLabel = source === 'landsat' ? 'Google Earth Engine (Landsat 8/9)' :
-                        source === 'sentinel' ? 'Google Earth Engine (Sentinel-2)' :
-                        source === 'gee' ? 'Google Earth Engine' :
-                        source === 'nasa' ? 'NASA Ocean Color (MODIS)' :
-                        'Proxy (CPCB correlations)';
-      if (dataYear) {
-        sourceLabel += ' \u00B7 ' + dataYear;
-      }
-      if (description) {
-        sourceLabel += ' \u00B7 ' + description;
-      }
-      indicator.textContent = sourceLabel;
+      let label = 'Google Earth Engine (Landsat 8/9)';
+      if (dataYear) label += ` · ${dataYear}`;
+      if (description) label += ` · ${description}`;
+      indicator.textContent = label;
     }
   }
 
   updateUI(data) {
-    const cdomValue = document.getElementById('cdomValue');
-    const cdomBadge = document.getElementById('cdomBadge');
-    if (cdomValue) cdomValue.textContent = data.cdom.value;
-    if (cdomBadge) {
-      cdomBadge.textContent = data.cdom.status;
-      cdomBadge.className = `pred-badge ${this.getStatusClass(data.cdom.status)}`;
-    }
+    const map_ = {
+      cdom:         { value: 'cdomValue',         badge: 'cdomBadge' },
+      turbidity:    { value: 'turbidityValue',    badge: 'turbidityBadge' },
+      chlorophyll:  { value: 'chlorophyllValue',  badge: 'chlorophyllBadge' },
+      kd490:        { value: 'kd490Value',        badge: 'kd490Badge' },
+    };
 
-    const turbValue = document.getElementById('turbidityValue');
-    const turbBadge = document.getElementById('turbidityBadge');
-    if (turbValue) turbValue.textContent = data.turbidity.value;
-    if (turbBadge) {
-      turbBadge.textContent = data.turbidity.status;
-      turbBadge.className = `pred-badge ${this.getStatusClass(data.turbidity.status)}`;
-    }
-
-    const chlorValue = document.getElementById('chlorophyllValue');
-    const chlorBadge = document.getElementById('chlorophyllBadge');
-    if (chlorValue) chlorValue.textContent = data.chlorophyll.value;
-    if (chlorBadge) {
-      chlorBadge.textContent = data.chlorophyll.status;
-      chlorBadge.className = `pred-badge ${this.getStatusClass(data.chlorophyll.status)}`;
-    }
-
-    const kdValue = document.getElementById('kd490Value');
-    const kdBadge = document.getElementById('kd490Badge');
-    if (kdValue) kdValue.textContent = data.kd490.value;
-    if (kdBadge) {
-      kdBadge.textContent = data.kd490.status;
-      kdBadge.className = `pred-badge ${this.getStatusClass(data.kd490.status)}`;
+    for (const [key, el] of Object.entries(map_)) {
+      const valEl = document.getElementById(el.value);
+      if (valEl && data[key]) valEl.textContent = data[key].value;
+      const badgeEl = document.getElementById(el.badge);
+      if (badgeEl && data[key]) {
+        badgeEl.textContent = data[key].status;
+        badgeEl.className = `pred-badge ${this.getStatusClass(data[key].status)}`;
+      }
     }
   }
 
@@ -276,26 +270,24 @@ class SentinelModule {
   }
 
   setupEventListeners() {
-    // Add controls to the section
     const section = document.getElementById('sentinel');
     if (!section) return;
 
     const container = section.querySelector('div[style*="padding: 0 3rem"]');
     if (!container) return;
 
-    // Check if controls already exist
     if (document.getElementById('sentinelDatePicker')) return;
 
     const controlsDiv = document.createElement('div');
     controlsDiv.style.cssText = 'display:flex;gap:1rem;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap';
     controlsDiv.innerHTML = `
-      <label style="font-family:var(--mono);font-size:.7rem;color:var(--t3)">Select Date (CPCB):</label>
+      <label style="font-family:var(--mono);font-size:.7rem;color:var(--t3)">Select Date:</label>
       <input type="date" id="sentinelDatePicker"
         style="background:var(--bg3);border:1px solid var(--border);color:var(--t1);
         font-family:var(--mono);font-size:.7rem;padding:6px 10px;border-radius:4px">
       <button id="loadSatelliteData" style="background:var(--sap);color:#fff;border:none;
         padding:6px 12px;border-radius:4px;cursor:pointer;font-family:var(--mono);font-size:.7rem">
-        Load Data
+        Load Live Data
       </button>
       <span id="exceedanceSummary" style="font-family:var(--mono);font-size:.7rem;padding:4px 8px;
         background:var(--bg3);border-radius:4px;display:none"></span>
@@ -316,19 +308,16 @@ class SentinelModule {
 
       loadBtn.addEventListener('click', () => {
         if (datePicker.value) {
-          const indexSelect = document.getElementById('sentinelIndexSelect');
-          const param = indexSelect ? indexSelect.value : 'cdom';
           this.loadSentinelData(datePicker.value);
-          this.loadDataPoints(param, datePicker.value);
+          this.loadDataPoints(datePicker.value);
         }
       });
     }
 
-    // Index selector triggers data point reload
     const indexSelect = document.getElementById('sentinelIndexSelect');
     if (indexSelect) {
       indexSelect.addEventListener('change', () => {
-        this.loadDataPoints(indexSelect.value, this.currentDate);
+        this.loadSentinelData(this.currentDate);
       });
     }
   }
