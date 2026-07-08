@@ -2,6 +2,7 @@
 Alerts API — /api/alerts
 Smart alert generation based on CPCB threshold breaches.
 """
+import pandas as pd
 from flask import Blueprint, request, jsonify
 from services.data_service import DataService
 from utils.cache import TTLCache
@@ -165,12 +166,30 @@ def get_alerts_timeline():
             param_vals = period_data[parameter].dropna()
             
             if len(param_vals) > 0:
+                # Collect station-level info for this period
+                station_entries = []
+                for _, row in period_data.iterrows():
+                    pv = row.get(parameter)
+                    if pd.notna(pv):
+                        station_entries.append({
+                            'station': row.get('Station_Name', row.get('Station', 'Unknown')),
+                            'water_body_type': row.get('Water_Body_Type', 'River'),
+                            'basin': row.get('Basin', ''),
+                            'value': round(float(pv), 2)
+                        })
+                # Pick the station with the highest value for this period
+                worst_entry = max(station_entries, key=lambda x: x['value']) if station_entries else {}
+                station_names = list(set(e['station'] for e in station_entries))
                 timeline.append({
                     'date': str(period),
                     'avg': round(float(param_vals.mean()), 2),
                     'min': round(float(param_vals.min()), 2),
                     'max': round(float(param_vals.max()), 2),
-                    'count': int(len(param_vals))
+                    'count': int(len(param_vals)),
+                    'parameter': parameter,
+                    'station': ', '.join(station_names[:3]) + (f' +{len(station_names)-3} more' if len(station_names) > 3 else ''),
+                    'water_body_type': worst_entry.get('water_body_type', 'River'),
+                    'basin': worst_entry.get('basin', '')
                 })
         
         result = {

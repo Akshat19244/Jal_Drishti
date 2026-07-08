@@ -15,7 +15,7 @@ class AlertsModule {
       this.loadAlertTimeline();
     } catch (error) {
       console.error('[Alerts] Failed to load alerts:', error);
-      if (grid) grid.innerHTML = `<div style="color:var(--crit);font-family:var(--mono);font-size:.75rem;padding:1rem;">⚠ Could not load alerts. Is the backend running?</div>`;
+      if (grid) grid.innerHTML = `<div style="color:var(--crit);font-family:var(--mono);font-size:.75rem;padding:1rem;">Could not load alerts. Is the backend running?</div>`;
     }
   }
 
@@ -31,7 +31,7 @@ class AlertsModule {
       // FIX: backend returns severity as 'Critical'/'Warning'/'Info' string, not a number
       const sev = alert.severity || 'Info';
       const sevClass = sev === 'Critical' ? 'cr' : sev === 'Warning' ? 'wn' : 'in';
-      const sevLabel = sev === 'Critical' ? '● Critical Alert' : sev === 'Warning' ? '◆ Warning' : '◉ Advisory';
+      const sevLabel = sev === 'Critical' ? 'Critical Alert' : sev === 'Warning' ? 'Warning' : 'Advisory';
       const score = alert.severity_score || 0;
 
       // FIX: backend has no 'threshold_breach' field — construct it from value/threshold/unit
@@ -62,7 +62,7 @@ class AlertsModule {
             <span class="atag">${thresholdTag}</span>
           </div>
           <div style="margin-top:8px;font-family:var(--mono);font-size:.6rem;color:var(--t3)">
-            📅 ${dateTime}
+            ${dateTime}
           </div>
         </div>
       `;
@@ -93,14 +93,15 @@ class AlertsModule {
         month: 'short',
         year: 'numeric'
       }) : 'N/A';
+      const param = event.parameter || 'BOD';
 
       return `
         <div class="timeline-item">
           <div class="timeline-date">${dateStr}</div>
           <div class="timeline-event">
-            <div style="font-weight:600;color:var(--t1)">${event.station || 'Unknown Station'}</div>
+            <div style="font-weight:600;color:var(--t1)">${event.station || 'Multiple stations'}</div>
             <div style="font-size:.7rem;color:var(--t3);margin-top:2px">
-              ${event.water_body_type || 'River'} ${event.basin ? '· ' + event.basin : ''}
+              ${event.water_body_type || 'River'} ${event.basin ? '· ' + event.basin : ''} · <strong>${param}</strong>
             </div>
             <div style="margin-top:4px">
               ${event.count} readings · Avg: <b>${event.avg}</b> ${event.unit || 'mg/L'} (Max: ${event.max})

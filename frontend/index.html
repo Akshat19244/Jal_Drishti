@@ -68,6 +68,47 @@
       --gold: #D97706;
       --gold-l: #EF8500;
     }
+
+    /* ── Beach Predict ── */
+    .bp-container { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
+    .bp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .bp-controls { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: end; }
+    .bp-label { display: block; font-size: .75rem; color: var(--t3); margin-bottom: .4rem; }
+    .bp-dropdown { width: 100%; background: var(--bg3); border: 1px solid var(--border); color: var(--t2); font-family: var(--mono); font-size: .72rem; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
+    
+    .score-ring { width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(var(--sap) 0%, var(--bg3) 0%); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; margin: 0 auto; }
+    .score-ring::before { content: ''; position: absolute; inset: 8px; border-radius: 50%; background: var(--card); }
+    .score-ring-value { position: relative; z-index: 1; font-size: 2rem; font-weight: 700; font-family: var(--mono); color: var(--t1); line-height: 1; }
+    .score-ring-label { position: relative; z-index: 1; font-size: .6rem; color: var(--t3); text-transform: uppercase; letter-spacing: .08em; }
+    
+    .contributor-list { display: flex; flex-direction: column; gap: .75rem; }
+    .contributor-item { display: flex; gap: .75rem; align-items: flex-start; padding: 10px 12px; background: var(--bg2); border-radius: 8px; }
+    .contributor-rank { font-family: var(--mono); font-size: .65rem; color: var(--t3); min-width: 20px; text-align: center; padding-top: 2px; }
+    .contributor-body { flex: 1; min-width: 0; }
+    .contributor-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .contributor-value { font-family: var(--mono); font-size: .65rem; color: var(--t2); }
+    .contributor-bar-wrap { height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
+    .contributor-bar { height: 100%; border-radius: 2px; transition: width .6s ease; }
+    .contributor-desc { font-size: .6rem; color: var(--t3); margin-top: 2px; }
+    
+    .impact-bar-wrap { height: 4px; background: var(--bg3); border-radius: 2px; overflow: hidden; width: 60px; }
+    .impact-bar { height: 100%; border-radius: 2px; }
+    
+    .pred-badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: .7rem; font-weight: 600; }
+    .status-safe { background: var(--ok-dim); color: var(--ok); }
+    .status-unsafe { background: var(--crit-dim); color: var(--crit); }
+    .status-warn { background: var(--warn-dim); color: var(--warn); }
+    
+    .interpret-box { background: var(--bg2); border-left: 3px solid var(--sap); border-radius: 6px; padding: 1rem 1.2rem; font-size: .82rem; color: var(--t2); line-height: 1.7; }
+    
+    .model-stat { display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; background: var(--bg2); border-radius: 6px; }
+    .model-stat-label { font-size: .58rem; color: var(--t3); text-transform: uppercase; letter-spacing: .06em; }
+    .model-stat-value { font-size: .72rem; color: var(--t1); font-family: var(--mono); }
+    
+    .beach-toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--crit); color: #fff; padding: 10px 24px; border-radius: 8px; font-family: var(--mono); font-size: .78rem; z-index: 9999; opacity: 0; transition: opacity .3s, transform .3s; pointer-events: none; }
+    .beach-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    
+    @media (max-width: 768px) { .bp-grid { grid-template-columns: 1fr; } .bp-controls { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -559,90 +600,70 @@
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════════ -->
-<!-- DUAL-MODEL WATER QUALITY CLASSIFICATION                           -->
+<!-- BEACH WATER QUALITY CLASSIFICATION                                -->
 <!-- ═══════════════════════════════════════════════════════════════ -->
 <section id="predict-sec">
   <div style="padding: 0 3rem;">
     <div class="section-eyebrow">AI-Powered Classification</div>
-    <h2 class="section-title">Water Quality Condition Classifier</h2>
-    <p style="font-size: .95rem; color: var(--t2); max-width: 600px; margin-bottom: 2rem;">
-      Dual-model system using CPCB historical patterns and satellite spectral signatures to classify water quality conditions.
+    <h2 class="section-title">Beach Swimming Suitability</h2>
+    <p style="font-size: .95rem; color: var(--t2); max-width: 680px; margin-bottom: 2rem;">
+      ML model trained on <strong>6,408 water samples</strong> from 149 beaches across 20 states (2014–2025). 
+      Evaluates <strong>15 water quality parameters</strong> to classify beach water as <strong>Safe</strong> or 
+      <strong>Unsafe</strong> for swimming with detailed parameter-level insights.
     </p>
 
     <!-- Selection Controls -->
-    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem;">
-      <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 1.5rem; align-items: end;">
+    <div class="bp-container" style="margin-bottom: 2rem;">
+      <div class="bp-controls">
         <div>
-          <label style="display: block; font-size: .75rem; color: var(--t3); margin-bottom: .4rem;">River Body</label>
-          <select id="riverBodySelect" class="dsel" style="width: 100%;">
-            <option value="">Select River Body</option>
+          <label class="bp-label">Beach Station</label>
+          <select id="beachStationSelect" class="bp-dropdown">
+            <option value="">Loading stations...</option>
           </select>
         </div>
-        <div>
-          <label style="display: block; font-size: .75rem; color: var(--t3); margin-bottom: .4rem;">Parameter</label>
-          <select id="parameterSelect" class="dsel" style="width: 100%;">
-            <option value="">Select Parameter</option>
-            <option value="DO">Dissolved Oxygen (DO)</option>
-            <option value="BOD">Biochemical Oxygen Demand (BOD)</option>
-            <option value="pH">pH Level</option>
-            <option value="FC">Fecal Coliform</option>
-            <option value="EC">Electrical Conductivity (EC)</option>
-            <option value="Nitrate">Nitrate</option>
-            <option value="Turbidity">Turbidity</option>
-          </select>
-        </div>
-        <button id="checkConditionBtn" class="btn-solid">Check Water Body Condition</button>
+        <button id="classifyBeachBtn" class="btn-solid">Classify Water Quality</button>
       </div>
     </div>
 
     <!-- Results Section -->
-    <div id="predictResults" style="display: none;">
-      <!-- Three Model Cards -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 1.5rem; margin-bottom: 2rem;">
-        
-        <!-- Model A Card -->
-        <div id="modelACard" style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
-          <div style="font-weight: 600; font-size: .85rem; margin-bottom: 1rem; color: var(--t1);">Model A: CPCB Historical</div>
-          <div class="class-badge status-moderate" style="display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: .75rem; font-weight: 600; margin-bottom: 1rem;">-</div>
-          <div style="margin-bottom: 1rem;">
-            <div style="font-size: .7rem; color: var(--t3); margin-bottom: .3rem;">Confidence</div>
-            <div style="background: var(--bg3); border-radius: 4px; height: 8px; overflow: hidden;">
-              <div class="confidence-bar" style="width: 0%; height: 100%; background: #D97706; transition: width 0.3s;"></div>
+    <div id="beachPredictResults" style="display: none;">
+      <div class="bp-container" style="margin-bottom: 1.5rem;">
+        <div style="display: flex; align-items: flex-start; gap: 1.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+          <!-- Score Ring -->
+          <div style="text-align: center;">
+            <div style="font-size: .6rem; color: var(--t3); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .6rem;">Swimming Suitability</div>
+            <div class="score-ring" id="suitabilityRing">
+              <span class="score-ring-value" id="suitabilityText">0</span>
+              <span class="score-ring-label" id="suitabilityLabel">Calculating</span>
             </div>
-            <div class="confidence-value" style="font-family: var(--mono); font-size: .7rem; color: var(--t3); margin-top: .3rem;">-</div>
           </div>
-          <div class="source-text" style="font-size: .7rem; color: var(--t3);">-</div>
+          <!-- Classification + Top Reasons -->
+          <div style="flex: 1; min-width: 200px;">
+            <div style="display: flex; align-items: center; gap: .75rem; margin-bottom: 1rem;">
+              <span style="font-size: .75rem; color: var(--t3);">Classification:</span>
+              <span id="suitabilityClass" class="pred-badge">-</span>
+            </div>
+            <div style="font-size: .7rem; color: var(--t3); margin-bottom: .5rem; letter-spacing: .04em;">Top Contributing Factors</div>
+            <div id="topContributors" class="contributor-list"></div>
+          </div>
         </div>
 
-        <!-- Model B Card -->
-        <div id="modelBCard" style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
-          <div style="font-weight: 600; font-size: .85rem; margin-bottom: 1rem; color: var(--t1);">Model B: Satellite Spectral</div>
-          <div class="class-badge status-moderate" style="display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: .75rem; font-weight: 600; margin-bottom: 1rem;">-</div>
-          <div style="margin-bottom: 1rem;">
-            <div style="font-size: .7rem; color: var(--t3); margin-bottom: .3rem;">Confidence</div>
-            <div style="background: var(--bg3); border-radius: 4px; height: 8px; overflow: hidden;">
-              <div class="confidence-bar" style="width: 0%; height: 100%; background: #D97706; transition: width 0.3s;"></div>
-            </div>
-            <div class="confidence-value" style="font-family: var(--mono); font-size: .7rem; color: var(--t3); margin-top: .3rem;">-</div>
-          </div>
-          <div class="source-text" style="font-size: .7rem; color: var(--t3);">-</div>
-        </div>
-
-        <!-- Combined Verdict Card -->
-        <div id="combinedVerdictCard" style="background: linear-gradient(135deg, var(--card) 0%, var(--bg3) 100%); border: 2px solid var(--sap); border-radius: 12px; padding: 1.5rem;">
-          <div style="font-weight: 700; font-size: .9rem; margin-bottom: 1rem; color: var(--t1);">Combined Verdict</div>
-          <div class="verdict-badge status-moderate" style="display: inline-block; padding: 6px 16px; border-radius: 6px; font-size: .85rem; font-weight: 700; margin-bottom: 1rem;">-</div>
-          <div class="agreement-indicator" style="font-size: .75rem; color: #16A34A; margin-bottom: 1rem; font-weight: 500;">-</div>
-          <div class="combined-confidence" style="font-family: var(--mono); font-size: .75rem; color: var(--t3);">-</div>
+        <!-- Parameter Breakdown Table -->
+        <div style="margin-top: 1.5rem;">
+          <div style="font-size: .7rem; color: var(--t3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .75rem;">Parameter-Level Analysis</div>
+          <div id="parameterBreakdown" style="overflow-x: auto;"></div>
         </div>
       </div>
 
-      <!-- Explanation Panel -->
-      <div style="background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem;">
-        <div style="font-weight: 600; font-size: .85rem; margin-bottom: .5rem; color: var(--t1);">How This Works</div>
-        <div id="explanationPanel" style="font-size: .8rem; color: var(--t2); line-height: 1.6;">
-          Model A uses 62 years of CPCB ground station history for this river body. Model B uses Sentinel-2 satellite spectral signatures independent of ground measurements. Agreement between both increases confidence in the verdict.
-        </div>
+      <!-- Interpretation Panel -->
+      <div class="bp-container" style="margin-bottom: 1.5rem;">
+        <div style="font-size: .7rem; color: var(--t3); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .6rem;">What This Means</div>
+        <div id="beachInterpretation" class="interpret-box">Loading interpretation...</div>
+      </div>
+
+      <!-- Model Info -->
+      <div class="bp-container">
+        <div id="beachModelInfo"></div>
       </div>
     </div>
   </div>
